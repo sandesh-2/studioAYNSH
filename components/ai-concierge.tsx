@@ -1,25 +1,31 @@
 'use client'
 
+import { DefaultChatTransport, type UIMessage } from 'ai'
 import { useChat } from '@ai-sdk/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { MessageSquare, X, Send, Loader2 } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
 
+const WELCOME_TEXT =
+  "Welcome to Studio AYNSH. I'm here to help you explore our services, recommend the perfect package for your occasion, or guide your booking. How may I assist you today?"
+
 export function AiConcierge() {
   const [isOpen, setIsOpen] = useState(false)
+  const [inputValue, setInputValue] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
-    api: '/api/concierge',
-    initialMessages: [
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({ api: '/api/concierge' }),
+    messages: [
       {
         id: 'welcome',
-        role: 'assistant',
-        content:
-          'Welcome to Studio AYNSH. I\'m here to help you explore our services, recommend the perfect package for your occasion, or guide your booking. How may I assist you today?',
+        role: 'assistant' as UIMessage['role'],
+        parts: [{ type: 'text', text: WELCOME_TEXT }],
       },
     ],
   })
+
+  const isLoading = status === 'streaming' || status === 'submitted'
 
   useEffect(() => {
     if (isOpen) {
@@ -27,10 +33,24 @@ export function AiConcierge() {
     }
   }, [messages, isOpen])
 
+  const handleSend = () => {
+    const text = inputValue.trim()
+    if (!text || isLoading) return
+    setInputValue('')
+    sendMessage({ text })
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) {
-      handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>)
+      handleSend()
     }
+  }
+
+  const getMessageText = (msg: (typeof messages)[0]): string => {
+    return msg.parts
+      .filter((p) => p.type === 'text')
+      .map((p) => (p as { type: 'text'; text: string }).text)
+      .join('')
   }
 
   return (
@@ -101,11 +121,7 @@ export function AiConcierge() {
                         : 'bg-secondary text-foreground border border-border'
                     }`}
                   >
-                    {msg.role === 'assistant' ? (
-                      msg.content
-                    ) : (
-                      msg.content
-                    )}
+                    {getMessageText(msg)}
                   </div>
                 </div>
               ))}
@@ -125,16 +141,15 @@ export function AiConcierge() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Suggestions */}
+            {/* Quick suggestions (only at start) */}
             {messages.length === 1 && (
               <div className="px-4 pb-3 flex flex-wrap gap-2">
                 {['Wedding packages', 'Pre-wedding shoot', 'Book a session'].map((s) => (
                   <button
                     key={s}
                     onClick={() => {
-                      const fakeEvent = { preventDefault: () => {}, target: {} } as React.FormEvent
-                      handleInputChange({ target: { value: s } } as React.ChangeEvent<HTMLInputElement>)
-                      setTimeout(() => handleSubmit(fakeEvent), 50)
+                      setInputValue('')
+                      sendMessage({ text: s })
                     }}
                     className="font-sans text-xs text-muted-foreground border border-border px-3 py-1.5 hover:border-foreground hover:text-foreground transition-all duration-200"
                   >
@@ -148,16 +163,16 @@ export function AiConcierge() {
             <div className="border-t border-border px-4 py-3 flex items-center gap-3">
               <input
                 type="text"
-                value={input}
-                onChange={handleInputChange}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask anything about our studio..."
                 className="flex-1 bg-transparent font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
                 aria-label="Message the AI concierge"
               />
               <button
-                onClick={(e) => handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>)}
-                disabled={!input.trim() || isLoading}
+                onClick={handleSend}
+                disabled={!inputValue.trim() || isLoading}
                 className="text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors duration-200"
                 aria-label="Send message"
               >

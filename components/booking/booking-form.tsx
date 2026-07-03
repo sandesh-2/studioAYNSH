@@ -1,24 +1,20 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { CheckCircle } from 'lucide-react'
 
-const bookingSchema = z.object({
-  name: z.string().min(2, 'Please enter your full name'),
-  email: z.string().email('Please enter a valid email'),
-  phone: z.string().min(10, 'Please enter a valid phone number'),
-  service: z.string().min(1, 'Please select a service'),
-  date: z.string().min(1, 'Please select a date'),
-  location: z.string().min(2, 'Please enter a location'),
-  budget: z.string().min(1, 'Please select a budget range'),
-  message: z.string().optional(),
-})
-
-type BookingData = z.infer<typeof bookingSchema>
+interface BookingData {
+  name: string
+  email: string
+  phone: string
+  service: string
+  date: string
+  location: string
+  budget: string
+  message?: string
+}
 
 const services = [
   'Wedding Photography',
@@ -49,13 +45,12 @@ export function BookingForm() {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<BookingData>({ resolver: zodResolver(bookingSchema) })
+  } = useForm<BookingData>()
 
   const onSubmit = async (data: BookingData) => {
     setSubmitting(true)
     // Simulate API call
     await new Promise((r) => setTimeout(r, 1200))
-    console.log('[v0] Booking submitted:', data)
     setSubmitting(false)
     setSubmitted(true)
     reset()
@@ -88,12 +83,12 @@ export function BookingForm() {
       {/* Field helper */}
       {(
         [
-          { label: 'Full Name', name: 'name', type: 'text', placeholder: 'Your full name' },
-          { label: 'Email Address', name: 'email', type: 'email', placeholder: 'you@example.com' },
-          { label: 'Phone Number', name: 'phone', type: 'tel', placeholder: '+91 00000 00000' },
-          { label: 'Event / Shoot Location', name: 'location', type: 'text', placeholder: 'City, venue, or region' },
-          { label: 'Preferred Date', name: 'date', type: 'date', placeholder: '' },
-        ] as const
+          { label: 'Full Name', name: 'name' as const, type: 'text', placeholder: 'Your full name', rules: { required: 'Please enter your full name', minLength: { value: 2, message: 'Name is too short' } } },
+          { label: 'Email Address', name: 'email' as const, type: 'email', placeholder: 'you@example.com', rules: { required: 'Please enter a valid email', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Please enter a valid email' } } },
+          { label: 'Phone Number', name: 'phone' as const, type: 'tel', placeholder: '+91 00000 00000', rules: { required: 'Please enter a valid phone number', minLength: { value: 10, message: 'Please enter a valid phone number' } } },
+          { label: 'Event / Shoot Location', name: 'location' as const, type: 'text', placeholder: 'City, venue, or region', rules: { required: 'Please enter a location', minLength: { value: 2, message: 'Location is too short' } } },
+          { label: 'Preferred Date', name: 'date' as const, type: 'date', placeholder: '', rules: { required: 'Please select a date' } },
+        ]
       ).map((field) => (
         <div key={field.name}>
           <label htmlFor={field.name} className="block font-sans text-xs font-medium tracking-[0.15em] uppercase text-foreground mb-2">
@@ -103,7 +98,7 @@ export function BookingForm() {
             id={field.name}
             type={field.type}
             placeholder={field.placeholder}
-            {...register(field.name)}
+            {...register(field.name, field.rules)}
             className="w-full border-b border-border bg-transparent py-3 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none transition-colors duration-200"
           />
           {errors[field.name] && (
@@ -119,7 +114,7 @@ export function BookingForm() {
         </label>
         <select
           id="service"
-          {...register('service')}
+          {...register('service', { required: 'Please select a service' })}
           className="w-full border-b border-border bg-transparent py-3 font-sans text-sm text-foreground focus:border-foreground focus:outline-none transition-colors duration-200 appearance-none cursor-pointer"
         >
           <option value="">Select a service</option>
@@ -135,7 +130,7 @@ export function BookingForm() {
         </label>
         <select
           id="budget"
-          {...register('budget')}
+          {...register('budget', { required: 'Please select a budget range' })}
           className="w-full border-b border-border bg-transparent py-3 font-sans text-sm text-foreground focus:border-foreground focus:outline-none transition-colors duration-200 appearance-none cursor-pointer"
         >
           <option value="">Select a budget range</option>
