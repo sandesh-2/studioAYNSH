@@ -34,12 +34,21 @@ const galleryItems: GalleryItem[] = [
 
 export function PortfolioClient() {
   const [activeCategory, setActiveCategory] = useState('All')
-  const [lightboxItem, setLightboxItem] = useState<GalleryItem | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   const filtered =
     activeCategory === 'All'
       ? galleryItems
       : galleryItems.filter((item) => item.category === activeCategory)
+
+  function openLightbox(item: GalleryItem) {
+    // find index in filtered list
+    const idx = filtered.findIndex((f) => f.id === item.id)
+    setLightboxIndex(idx)
+  }
+  function closeLightbox() { setLightboxIndex(null) }
+  function prevItem() { setLightboxIndex((i) => (i !== null && i > 0 ? i - 1 : i)) }
+  function nextItem() { setLightboxIndex((i) => (i !== null && i < filtered.length - 1 ? i + 1 : i)) }
 
   return (
     <>
@@ -74,7 +83,7 @@ export function PortfolioClient() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                onClick={() => setLightboxItem(item)}
+                onClick={() => openLightbox(item)}
                 className={`group relative overflow-hidden cursor-pointer bg-muted ${
                   item.span === 'wide' ? 'col-span-2' : ''
                 } ${item.span === 'tall' ? 'row-span-2' : ''}`}
@@ -98,7 +107,13 @@ export function PortfolioClient() {
       </div>
 
       {/* Lightbox */}
-      <LightboxModal item={lightboxItem} onClose={() => setLightboxItem(null)} />
+      <LightboxModal
+        items={filtered}
+        index={lightboxIndex}
+        onClose={closeLightbox}
+        onPrev={prevItem}
+        onNext={nextItem}
+      />
     </>
   )
 }
