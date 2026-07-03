@@ -1,0 +1,143 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Studio AYNSH Luxury Color System */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --color-espresso: var(--espresso);
+  --color-cream: var(--cream);
+  --color-champagne: var(--champagne);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+
+  /* Font system */
+  --font-serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  /* Cream / Warm White — primary background */
+  --background: oklch(0.975 0.008 75);
+  /* Deep Espresso — primary foreground */
+  --foreground: oklch(0.18 0.012 45);
+  /* Card: slightly off-white */
+  --card: oklch(0.985 0.006 75);
+  --card-foreground: oklch(0.18 0.012 45);
+  --popover: oklch(0.985 0.006 75);
+  --popover-foreground: oklch(0.18 0.012 45);
+  /* Primary: Espresso / Charcoal */
+  --primary: oklch(0.22 0.014 45);
+  --primary-foreground: oklch(0.975 0.008 75);
+  /* Secondary: Graphite */
+  --secondary: oklch(0.92 0.006 75);
+  --secondary-foreground: oklch(0.22 0.014 45);
+  /* Muted: Warm off-white */
+  --muted: oklch(0.94 0.007 75);
+  --muted-foreground: oklch(0.52 0.012 50);
+  /* Accent: Champagne Gold */
+  --accent: oklch(0.78 0.065 70);
+  --accent-foreground: oklch(0.18 0.012 45);
+  --destructive: oklch(0.577 0.245 27.325);
+  /* Border: very subtle warm tone */
+  --border: oklch(0.88 0.008 75);
+  --input: oklch(0.88 0.008 75);
+  --ring: oklch(0.78 0.065 70);
+  /* Custom brand tokens */
+  --gold: oklch(0.72 0.08 65);
+  --champagne: oklch(0.85 0.055 70);
+  --espresso: oklch(0.22 0.014 45);
+  --cream: oklch(0.975 0.008 75);
+  --radius: 0.25rem;
+  --sidebar: oklch(0.97 0.008 75);
+  --sidebar-foreground: oklch(0.18 0.012 45);
+  --sidebar-primary: oklch(0.22 0.014 45);
+  --sidebar-primary-foreground: oklch(0.975 0.008 75);
+  --sidebar-accent: oklch(0.92 0.006 75);
+  --sidebar-accent-foreground: oklch(0.22 0.014 45);
+  --sidebar-border: oklch(0.88 0.008 75);
+  --sidebar-ring: oklch(0.78 0.065 70);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: 'liga' 1, 'kern' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-feature-settings: 'liga' 1, 'kern' 1, 'swsh' 1;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection */
+::selection {
+  background: oklch(0.78 0.065 70 / 0.3);
+  color: var(--foreground);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
