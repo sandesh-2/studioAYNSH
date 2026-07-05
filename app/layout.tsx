@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import { AiConcierge } from '@/components/ai-concierge'
+import { PagePreloader } from '@/components/page-preloader'
 import type { Metadata, Viewport } from 'next'
 import { Cormorant_Garamond, Inter } from 'next/font/google'
 import './globals.css'
@@ -76,6 +77,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable} bg-background`}>
       <body className="antialiased font-sans">
+        <PagePreloader />
         {children}
         <AiConcierge />
         {process.env.NODE_ENV === 'production' && <Analytics />}

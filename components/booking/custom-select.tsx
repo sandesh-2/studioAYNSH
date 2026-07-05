@@ -4,8 +4,13 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, Check } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
+interface Option {
+  label: string
+  value: string
+}
+
 interface CustomSelectProps {
-  options: string[]
+  options: Option[]
   value: string
   onChange: (val: string) => void
   placeholder: string
@@ -25,6 +30,8 @@ export function CustomSelect({ options, value, onChange, placeholder, error }: C
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  const selectedLabel = options.find((opt) => opt.value === value)?.label || placeholder
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -37,7 +44,7 @@ export function CustomSelect({ options, value, onChange, placeholder, error }: C
         aria-expanded={open}
       >
         <span className={value ? 'text-foreground' : 'text-muted-foreground/50'}>
-          {value || placeholder}
+          {selectedLabel}
         </span>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
           <ChevronDown size={15} className="text-muted-foreground" />
@@ -56,18 +63,18 @@ export function CustomSelect({ options, value, onChange, placeholder, error }: C
             style={{ maxHeight: 260, overflowY: 'auto' }}
           >
             {options.map((opt) => (
-              <li key={opt} role="option" aria-selected={value === opt}>
+              <li key={opt.value} role="option" aria-selected={value === opt.value}>
                 <button
                   type="button"
-                  onClick={() => { onChange(opt); setOpen(false) }}
+                  onClick={() => { onChange(opt.value); setOpen(false) }}
                   className={`w-full flex items-center justify-between px-5 py-3 font-sans text-sm transition-colors duration-150 ${
-                    value === opt
+                    value === opt.value
                       ? 'bg-foreground text-background'
                       : 'text-foreground hover:bg-secondary'
                   }`}
                 >
-                  <span>{opt}</span>
-                  {value === opt && <Check size={13} />}
+                  <span>{opt.label}</span>
+                  {value === opt.value && <Check size={13} />}
                 </button>
               </li>
             ))}
