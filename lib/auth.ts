@@ -1,13 +1,32 @@
 import { betterAuth } from 'better-auth'
-import { pool } from '@/lib/db'  // reuse the singleton pool
+import { Pool } from 'pg'
 
+// Singleton pool for auth — separate instance from Drizzle
+const globalForAuthPool = globalThis as unknown as {
+  authPool: Pool | undefined
+}
+
+const authPool =
+  globalForAuthPool.authPool ??
+  new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 10,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
+  })
+
+if (process.env.NODE_ENV !== 'production') globalForAuthPool.authPool = authPool
+
+// Build trusted origins
 const trustedOrigins: string[] = []
 if (process.env.BETTER_AUTH_URL) trustedOrigins.push(process.env.BETTER_AUTH_URL)
-if (process.env.VERCEL_PROJECT_PRODUCTION_URL) trustedOrigins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`)
+if (process.env.VERCEL_PROJECT_PRODUCTION_URL) 
+  trustedOrigins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`)
 if (process.env.VERCEL_URL) trustedOrigins.push(`https://${process.env.VERCEL_URL}`)
 if (process.env.V0_RUNTIME_URL) trustedOrigins.push(process.env.V0_RUNTIME_URL)
 
-const baseURL =
+// Build base URL with production-safe fallback
+let baseURL =
   process.env.BETTER_AUTH_URL ??
   (process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
@@ -15,8 +34,13 @@ const baseURL =
     ? `https://${process.env.VERCEL_URL}`
     : process.env.V0_RUNTIME_URL)
 
+// Ensure baseURL is always set for auth to work
+if (!baseURL) {
+  baseURL = 'http://localhost:3000'
+}
+
 export const auth = betterAuth({
-  database: pool,
+  database: authPool,
   baseURL,
   trustedOrigins,
   emailAndPassword: {
