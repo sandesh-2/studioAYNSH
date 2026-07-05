@@ -98,6 +98,24 @@ export async function createBooking(input: BookingInput) {
 
   // Send confirmation email via resend (graceful no-op if key missing)
   await sendConfirmationEmail({ ...input, clientName, clientEmail }, id)
+  
+  // Send booking notification to studio owner
+  await sendStudioOwnerNotification({
+    bookingId: id,
+    clientName,
+    clientEmail,
+    clientPhone,
+    service,
+    eventDate,
+    eventTime: input.eventTime ?? null,
+    location,
+    duration: input.duration ?? null,
+    budget: input.budget ?? null,
+    guestCount: input.guestCount ?? null,
+    shootTheme: input.shootTheme ?? null,
+    specialRequests: input.specialRequests ?? null,
+    howHeard: input.howHeard ?? null,
+  })
 
   revalidatePath('/portal')
   revalidatePath('/admin')
@@ -173,6 +191,139 @@ async function sendConfirmationEmail(input: BookingInput, bookingId: string) {
     })
   } catch {
     // Non-critical — booking is already saved
+  }
+}
+
+async function sendStudioOwnerNotification(bookingDetails: {
+  bookingId: string
+  clientName: string
+  clientEmail: string
+  clientPhone: string
+  service: string
+  eventDate: string
+  eventTime: string | null
+  location: string
+  duration: string | null
+  budget: string | null
+  guestCount: string | null
+  shootTheme: string | null
+  specialRequests: string | null
+  howHeard: string | null
+}) {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return // Skip if Resend key not configured
+
+  const studioEmail = 'samratgupta7754@gmail.com' // Studio owner email — update this
+
+  const serviceLabels: Record<string, string> = {
+    wedding: 'Wedding Photography',
+    prewedding: 'Pre-Wedding Photography',
+    portrait: 'Portrait Session',
+    fashion: 'Fashion Editorial',
+    drone: 'Drone Cinematography',
+    other: 'Other',
+  }
+
+  const serviceName = serviceLabels[bookingDetails.service] ?? bookingDetails.service
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"/></head>
+    <body style="font-family:Arial,sans-serif;background:#F5F3EF;margin:0;padding:20px;">
+      <div style="max-width:700px;margin:0 auto;background:#FFFFFF;border:1px solid #E8E3DB;border-radius:8px;overflow:hidden;">
+        <div style="background:#1C1A17;padding:24px 32px;">
+          <p style="color:#C4A882;font-size:12px;letter-spacing:3px;margin:0;font-weight:600;text-transform:uppercase;">NEW BOOKING ALERT</p>
+          <h1 style="color:#FAF9F6;font-size:24px;margin:8px 0 0;font-weight:400;">Booking Reference #${bookingDetails.bookingId.slice(0, 8).toUpperCase()}</h1>
+        </div>
+        <div style="padding:32px;">
+          <h2 style="font-family:Georgia,serif;font-size:20px;color:#1C1A17;margin:0 0 24px;border-bottom:2px solid #E8E3DB;padding-bottom:12px;">Client Details</h2>
+          <table style="width:100%;margin-bottom:32px;border-collapse:collapse;">
+            <tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;width:30%;">Name</td>
+              <td style="padding:10px 0;color:#6B6560;">${bookingDetails.clientName}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">Email</td>
+              <td style="padding:10px 0;color:#6B6560;"><a href="mailto:${bookingDetails.clientEmail}" style="color:#C4A882;text-decoration:none;">${bookingDetails.clientEmail}</a></td>
+            </tr>
+            <tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">Phone</td>
+              <td style="padding:10px 0;color:#6B6560;"><a href="tel:${bookingDetails.clientPhone}" style="color:#C4A882;text-decoration:none;">${bookingDetails.clientPhone}</a></td>
+            </tr>
+          </table>
+
+          <h2 style="font-family:Georgia,serif;font-size:20px;color:#1C1A17;margin:0 0 24px;border-bottom:2px solid #E8E3DB;padding-bottom:12px;">Session Details</h2>
+          <table style="width:100%;margin-bottom:32px;border-collapse:collapse;">
+            <tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;width:30%;">Service</td>
+              <td style="padding:10px 0;color:#6B6560;">${serviceName}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">Event Date</td>
+              <td style="padding:10px 0;color:#6B6560;">${bookingDetails.eventDate}</td>
+            </tr>
+            ${bookingDetails.eventTime ? `<tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">Time</td>
+              <td style="padding:10px 0;color:#6B6560;">${bookingDetails.eventTime}</td>
+            </tr>` : ''}
+            <tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">Location</td>
+              <td style="padding:10px 0;color:#6B6560;">${bookingDetails.location}</td>
+            </tr>
+            ${bookingDetails.duration ? `<tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">Duration</td>
+              <td style="padding:10px 0;color:#6B6560;">${bookingDetails.duration}</td>
+            </tr>` : ''}
+            ${bookingDetails.budget ? `<tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">Budget</td>
+              <td style="padding:10px 0;color:#6B6560;">${bookingDetails.budget}</td>
+            </tr>` : ''}
+            ${bookingDetails.guestCount ? `<tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">Guest Count</td>
+              <td style="padding:10px 0;color:#6B6560;">${bookingDetails.guestCount}</td>
+            </tr>` : ''}
+            ${bookingDetails.shootTheme ? `<tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">Shoot Theme</td>
+              <td style="padding:10px 0;color:#6B6560;">${bookingDetails.shootTheme}</td>
+            </tr>` : ''}
+            ${bookingDetails.howHeard ? `<tr style="border-bottom:1px solid #E8E3DB;">
+              <td style="padding:10px 0;font-weight:600;color:#1C1A17;">How They Found Us</td>
+              <td style="padding:10px 0;color:#6B6560;">${bookingDetails.howHeard}</td>
+            </tr>` : ''}
+          </table>
+
+          ${bookingDetails.specialRequests ? `
+          <h2 style="font-family:Georgia,serif;font-size:16px;color:#1C1A17;margin:0 0 12px;border-bottom:2px solid #E8E3DB;padding-bottom:8px;">Special Requests / Vision</h2>
+          <p style="color:#6B6560;line-height:1.6;margin:0 0 32px;">${bookingDetails.specialRequests}</p>
+          ` : ''}
+
+          <div style="background:#F5F3EF;border-left:4px solid #C4A882;padding:16px;margin:32px 0;">
+            <p style="margin:0;color:#1C1A17;font-weight:600;">⏱️ Next Step</p>
+            <p style="margin:6px 0 0;color:#6B6560;font-size:13px;">Review this enquiry in your <a href="${process.env.BETTER_AUTH_URL ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '#')}/admin" style="color:#C4A882;text-decoration:none;">Admin Dashboard</a> and respond to the client within 24 hours.</p>
+          </div>
+        </div>
+        <div style="background:#1C1A17;padding:20px 32px;text-align:center;">
+          <p style="font-size:12px;color:#9E9690;margin:0;">Studio AYNSH Admin Notification • Do not reply to this email</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'Studio AYNSH <bookings@studioaynsh.com>',
+        to: [studioEmail],
+        subject: `📸 New Booking: ${serviceName} on ${bookingDetails.eventDate}`,
+        html,
+      }),
+    })
+  } catch {
+    // Non-critical — booking is already saved and notification can be viewed in admin dashboard
   }
 }
 
