@@ -1,295 +1,300 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import Image from 'next/image'
-import { useState } from 'react'
-import { Download, Heart, CheckCircle, Clock, Star, LogIn } from 'lucide-react'
+import { signOut } from '@/lib/auth-client'
+import { sendClientMessage } from '@/app/actions/booking'
+import type { Booking } from '@/lib/db/schema'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Calendar, MapPin, Clock, IndianRupee, MessageSquare,
+  LogOut, ChevronRight, CheckCircle, XCircle, AlertCircle,
+  Loader2, Send, Users,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 
-// Simulated client portal with login gate
-interface Photo {
-  id: number
-  src: string
-  alt: string
-  favorited: boolean
-  approved: boolean
+const STATUS_CONFIG = {
+  pending:   { label: 'Pending Review', color: 'text-amber-600',   bg: 'bg-amber-50   border-amber-200',       Icon: AlertCircle },
+  confirmed: { label: 'Confirmed',      color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200',     Icon: CheckCircle },
+  completed: { label: 'Completed',      color: 'text-foreground',  bg: 'bg-secondary  border-border',          Icon: CheckCircle },
+  cancelled: { label: 'Cancelled',      color: 'text-destructive', bg: 'bg-destructive/5 border-destructive/20', Icon: XCircle },
+} as const
+
+const SERVICE_LABELS: Record<string, string> = {
+  wedding:    'Wedding Photography',
+  prewedding: 'Pre-Wedding Photography',
+  portrait:   'Portrait Session',
+  fashion:    'Fashion Editorial',
+  drone:      'Drone Cinematography',
+  other:      'Other',
 }
 
-const demoPhotos: Photo[] = [
-  { id: 1, src: '/images/portfolio-wedding-1.png', alt: 'Wedding ceremony shot 1', favorited: false, approved: true },
-  { id: 2, src: '/images/portfolio-portrait-1.png', alt: 'Portrait shot', favorited: true, approved: false },
-  { id: 3, src: '/images/portfolio-prewedding-1.png', alt: 'Pre-wedding shoot', favorited: false, approved: false },
-  { id: 4, src: '/images/portfolio-fashion-1.png', alt: 'Fashion editorial', favorited: true, approved: true },
-  { id: 5, src: '/images/portfolio-drone-1.png', alt: 'Aerial shot', favorited: false, approved: false },
-  { id: 6, src: '/images/portfolio-wedding-1.png', alt: 'Wedding reception', favorited: false, approved: true },
-]
+interface Props {
+  user: { id: string; name: string; email: string; role?: string | null }
+  bookings: Booking[]
+}
 
-const projectSteps = [
-  { label: 'Session Complete', done: true },
-  { label: 'Editing in Progress', done: true },
-  { label: 'Gallery Ready for Review', done: true },
-  { label: 'Selections Approved', done: false },
-  { label: 'Final Delivery', done: false },
-]
+export function ClientPortalUI({ user, bookings }: Props) {
+  const router = useRouter()
+  const [activeBooking, setActiveBooking] = useState<Booking | null>(null)
+  const [messageText, setMessageText] = useState('')
+  const [sending, startSending] = useTransition()
+  const [signingOut, setSigningOut] = useState(false)
 
-export function ClientPortalUI() {
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loginError, setLoginError] = useState('')
-  const [photos, setPhotos] = useState(demoPhotos)
-  const [activeTab, setActiveTab] = useState<'gallery' | 'progress' | 'info'>('gallery')
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Demo credentials for preview
-    if (email === 'demo@studioaynsh.com' && password === 'demo1234') {
-      setLoggedIn(true)
-      setLoginError('')
-    } else {
-      setLoginError('Invalid credentials. Try demo@studioaynsh.com / demo1234')
-    }
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    await signOut()
+    router.push('/')
+    router.refresh()
   }
 
-  const toggleFavorite = (id: number) => {
-    setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, favorited: !p.favorited } : p)))
+  const handleSendMessage = () => {
+    if (!activeBooking || !messageText.trim()) return
+    startSending(async () => {
+      await sendClientMessage(activeBooking.id, messageText.trim())
+      setMessageText('')
+      router.refresh()
+    })
   }
 
-  const toggleApprove = (id: number) => {
-    setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, approved: !p.approved } : p)))
-  }
-
-  if (!loggedIn) {
-    return (
-      <section className="py-20 lg:py-32 px-6 max-w-md mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <p className="font-sans text-xs font-medium tracking-[0.3em] uppercase text-muted-foreground mb-6">Secure Access</p>
-          <h1 className="font-serif font-light text-foreground text-4xl lg:text-5xl mb-4">Client Portal</h1>
-          <p className="font-sans text-sm text-muted-foreground mb-10 leading-relaxed">
-            Sign in to view your gallery, download your photographs, and track your project progress.
-          </p>
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block font-sans text-xs font-medium tracking-[0.15em] uppercase text-foreground mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                required
-                className="w-full border-b border-border bg-transparent py-3 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none transition-colors duration-200"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block font-sans text-xs font-medium tracking-[0.15em] uppercase text-foreground mb-2">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Your portal password"
-                required
-                className="w-full border-b border-border bg-transparent py-3 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none transition-colors duration-200"
-              />
-            </div>
-            {loginError && (
-              <p className="font-sans text-xs text-destructive">{loginError}</p>
-            )}
-            <button
-              type="submit"
-              className="w-full py-4 bg-foreground text-background font-sans text-xs font-medium tracking-[0.2em] uppercase hover:bg-accent hover:text-foreground transition-all duration-300 flex items-center justify-center gap-2"
-            >
-              <LogIn size={16} />
-              Sign In to Portal
-            </button>
-          </form>
-
-          <p className="mt-8 font-sans text-xs text-muted-foreground/60 text-center">
-            Don&apos;t have access? Contact us at{' '}
-            <a href="mailto:samratgupta7754@gmail.com" className="underline hover:text-foreground transition-colors">
-              samratgupta7754@gmail.com
-            </a>
-          </p>
-          <p className="mt-3 font-sans text-xs text-muted-foreground/40 text-center">
-            Demo: demo@studioaynsh.com / demo1234
-          </p>
-        </motion.div>
-      </section>
-    )
+  const stats = {
+    total:     bookings.length,
+    confirmed: bookings.filter((b) => b.status === 'confirmed').length,
+    pending:   bookings.filter((b) => b.status === 'pending').length,
+    completed: bookings.filter((b) => b.status === 'completed').length,
   }
 
   return (
-    <section className="py-12 px-6 lg:px-12 max-w-7xl mx-auto">
-      {/* Portal header */}
-      <div className="flex items-center justify-between mb-10 flex-wrap gap-4">
-        <div>
-          <p className="font-sans text-xs tracking-[0.25em] uppercase text-muted-foreground mb-1">Client Portal</p>
-          <h1 className="font-serif text-foreground text-3xl font-light">Welcome Back</h1>
-          <p className="font-sans text-sm text-muted-foreground mt-1">Sharma Wedding &bull; Gorakhpur, March 2024</p>
-        </div>
-        <button
-          onClick={() => setLoggedIn(false)}
-          className="font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200 border border-border px-4 py-2"
-        >
-          Sign Out
-        </button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        {[
-          { label: 'Total Photos', value: photos.length.toString() },
-          { label: 'Favorited', value: photos.filter((p) => p.favorited).length.toString() },
-          { label: 'Approved', value: photos.filter((p) => p.approved).length.toString() },
-          { label: 'Pending Review', value: photos.filter((p) => !p.approved).length.toString() },
-        ].map((stat) => (
-          <div key={stat.label} className="border border-border p-5">
-            <p className="font-serif text-3xl font-light text-foreground">{stat.value}</p>
-            <p className="font-sans text-xs text-muted-foreground tracking-[0.15em] uppercase mt-1">{stat.label}</p>
+    <main className="pt-20 min-h-screen bg-background">
+      {/* Header */}
+      <section className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-10 flex items-start justify-between gap-6 flex-wrap">
+          <div>
+            <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">Client Portal</p>
+            <h1 className="font-serif text-3xl md:text-4xl text-foreground font-light">
+              Welcome, {user.name.split(' ')[0]}
+            </h1>
+            <p className="font-sans text-sm text-muted-foreground mt-1">{user.email}</p>
           </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-0 border-b border-border mb-8">
-        {(['gallery', 'progress', 'info'] as const).map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`font-sans text-xs font-medium tracking-[0.15em] uppercase px-6 py-3 border-b-2 transition-all duration-200 capitalize ${
-              activeTab === tab
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="flex items-center gap-2 font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200 mt-2 disabled:opacity-50"
           >
-            {tab}
+            <LogOut size={14} />
+            {signingOut ? 'Signing out...' : 'Sign Out'}
           </button>
-        ))}
-      </div>
+        </div>
+      </section>
 
-      {/* Gallery tab */}
-      {activeTab === 'gallery' && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {photos.map((photo) => (
-            <motion.div
-              key={photo.id}
-              layout
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="group relative aspect-square overflow-hidden bg-muted"
-            >
-              <Image
-                src={photo.src}
-                alt={photo.alt}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 768px) 50vw, 25vw"
-              />
-              {/* Overlay actions */}
-              <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/50 transition-all duration-300 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                <button
-                  onClick={() => toggleFavorite(photo.id)}
-                  className={`p-2 border transition-all duration-200 ${
-                    photo.favorited ? 'bg-accent border-accent text-foreground' : 'bg-background/20 border-background/30 text-background hover:bg-background/40'
-                  }`}
-                  aria-label={photo.favorited ? 'Remove from favorites' : 'Add to favorites'}
-                >
-                  <Heart size={16} fill={photo.favorited ? 'currentColor' : 'none'} />
-                </button>
-                <button
-                  onClick={() => toggleApprove(photo.id)}
-                  className={`p-2 border transition-all duration-200 ${
-                    photo.approved ? 'bg-green-600 border-green-600 text-white' : 'bg-background/20 border-background/30 text-background hover:bg-background/40'
-                  }`}
-                  aria-label={photo.approved ? 'Unapprove photo' : 'Approve photo'}
-                >
-                  <CheckCircle size={16} />
-                </button>
-                <button
-                  className="p-2 bg-background/20 border border-background/30 text-background hover:bg-background/40 transition-all duration-200"
-                  aria-label="Download photo"
-                >
-                  <Download size={16} />
-                </button>
-              </div>
-              {/* Status badges */}
-              <div className="absolute top-2 right-2 flex gap-1">
-                {photo.favorited && (
-                  <span className="bg-accent p-1"><Heart size={10} fill="currentColor" className="text-foreground" /></span>
-                )}
-                {photo.approved && (
-                  <span className="bg-green-600 p-1"><CheckCircle size={10} className="text-white" /></span>
-                )}
-              </div>
-            </motion.div>
+      <div className="max-w-6xl mx-auto px-6 py-10 space-y-10">
+
+        {/* Stats row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Total Bookings', value: stats.total },
+            { label: 'Confirmed',      value: stats.confirmed },
+            { label: 'Pending',        value: stats.pending },
+            { label: 'Completed',      value: stats.completed },
+          ].map((s) => (
+            <div key={s.label} className="border border-border p-5">
+              <p className="font-serif text-3xl text-foreground font-light">{s.value}</p>
+              <p className="font-sans text-xs text-muted-foreground tracking-[0.12em] uppercase mt-1">{s.label}</p>
+            </div>
           ))}
         </div>
-      )}
 
-      {/* Progress tab */}
-      {activeTab === 'progress' && (
-        <div className="max-w-lg">
-          <h2 className="font-serif text-foreground text-2xl font-light mb-8">Project Progress</h2>
-          <div className="space-y-0">
-            {projectSteps.map((step, i) => (
-              <div key={step.label} className="flex items-start gap-5 py-5 border-b border-border last:border-b-0">
-                <div className={`w-8 h-8 flex items-center justify-center shrink-0 border-2 mt-0.5 ${
-                  step.done ? 'bg-foreground border-foreground text-background' : 'border-border text-muted-foreground'
-                }`}>
-                  {step.done ? <CheckCircle size={16} /> : <Clock size={16} />}
-                </div>
-                <div>
-                  <p className={`font-serif text-lg ${step.done ? 'text-foreground' : 'text-muted-foreground'}`}>{step.label}</p>
-                  <p className="font-sans text-xs text-muted-foreground tracking-wide mt-0.5">
-                    {step.done ? 'Completed' : 'Pending'}
-                  </p>
-                </div>
-              </div>
-            ))}
+        {/* Empty state */}
+        {bookings.length === 0 ? (
+          <div className="border border-border p-12 text-center space-y-4">
+            <p className="font-serif text-2xl text-foreground font-light">No bookings yet</p>
+            <p className="font-sans text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
+              Once you submit a booking enquiry, it will appear here and you can track its status in real time.
+            </p>
+            <Link
+              href="/booking"
+              className="inline-block mt-4 font-sans text-xs tracking-[0.18em] uppercase border border-foreground px-6 py-3 text-foreground hover:bg-foreground hover:text-background transition-all duration-200"
+            >
+              Make a Booking
+            </Link>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
 
-      {/* Info tab */}
-      {activeTab === 'info' && (
-        <div className="max-w-xl space-y-8">
-          <div className="border-t border-border pt-6">
-            <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-2">Session</p>
-            <p className="font-serif text-foreground text-xl">Sharma Wedding — Full Day Coverage</p>
+            {/* Booking list */}
+            <div className="lg:col-span-2 space-y-3">
+              <p className="font-sans text-xs tracking-[0.18em] uppercase text-muted-foreground mb-4">Your Sessions</p>
+              {bookings.map((b) => {
+                const cfg = STATUS_CONFIG[b.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending
+                const isActive = activeBooking?.id === b.id
+                return (
+                  <motion.button
+                    key={b.id}
+                    onClick={() => setActiveBooking(isActive ? null : b)}
+                    whileHover={{ x: 2 }}
+                    className={`w-full text-left border p-4 transition-all duration-200 ${
+                      isActive ? 'border-foreground bg-secondary' : 'border-border hover:border-foreground/40'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-sans text-sm font-medium text-foreground truncate">
+                          {SERVICE_LABELS[b.service] ?? b.service}
+                        </p>
+                        <p className="font-sans text-xs text-muted-foreground mt-0.5">{b.eventDate}</p>
+                        <p className="font-sans text-xs text-muted-foreground truncate">{b.location}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                        <span className={`font-sans text-[10px] tracking-[0.1em] uppercase ${cfg.color}`}>
+                          {cfg.label}
+                        </span>
+                        <ChevronRight size={12} className="text-muted-foreground" />
+                      </div>
+                    </div>
+                  </motion.button>
+                )
+              })}
+              <Link
+                href="/booking"
+                className="block text-center font-sans text-xs tracking-[0.15em] uppercase border border-dashed border-border text-muted-foreground hover:border-foreground hover:text-foreground py-3 transition-all duration-200"
+              >
+                + New Booking
+              </Link>
+            </div>
+
+            {/* Booking detail panel */}
+            <div className="lg:col-span-3">
+              <AnimatePresence mode="wait">
+                {activeBooking ? (
+                  <motion.div
+                    key={activeBooking.id}
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -16 }}
+                    transition={{ duration: 0.25 }}
+                    className="border border-border"
+                  >
+                    {/* Detail header */}
+                    <div className="border-b border-border px-6 py-4 flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-sans text-xs text-muted-foreground tracking-[0.12em] uppercase">
+                          Ref #{activeBooking.id.slice(0, 8).toUpperCase()}
+                        </p>
+                        <p className="font-serif text-lg text-foreground font-light mt-0.5">
+                          {SERVICE_LABELS[activeBooking.service] ?? activeBooking.service}
+                        </p>
+                      </div>
+                      {(() => {
+                        const cfg = STATUS_CONFIG[activeBooking.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending
+                        return (
+                          <span className={`font-sans text-[10px] tracking-[0.1em] uppercase border px-3 py-1.5 shrink-0 ${cfg.bg} ${cfg.color}`}>
+                            {cfg.label}
+                          </span>
+                        )
+                      })()}
+                    </div>
+
+                    {/* Details grid */}
+                    <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-5 border-b border-border">
+                      {[
+                        { Icon: Calendar,       label: 'Event Date', value: activeBooking.eventDate },
+                        { Icon: Clock,          label: 'Time',       value: activeBooking.eventTime ?? '—' },
+                        { Icon: MapPin,         label: 'Location',   value: activeBooking.location },
+                        { Icon: Clock,          label: 'Duration',   value: activeBooking.duration ?? '—' },
+                        { Icon: IndianRupee,    label: 'Budget',     value: activeBooking.budget ?? '—' },
+                        { Icon: Users,          label: 'Guests',     value: activeBooking.guestCount ?? '—' },
+                      ].map(({ Icon, label, value }) => (
+                        <div key={label} className="flex items-start gap-3">
+                          <Icon size={13} className="text-muted-foreground mt-0.5 shrink-0" />
+                          <div>
+                            <p className="font-sans text-[10px] tracking-[0.12em] uppercase text-muted-foreground">{label}</p>
+                            <p className="font-sans text-sm text-foreground mt-0.5">{value}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Special requests */}
+                    {activeBooking.specialRequests && (
+                      <div className="px-6 py-4 border-b border-border">
+                        <p className="font-sans text-[10px] tracking-[0.12em] uppercase text-muted-foreground mb-2">Vision / Special Requests</p>
+                        <p className="font-sans text-sm text-foreground leading-relaxed">{activeBooking.specialRequests}</p>
+                      </div>
+                    )}
+
+                    {/* Admin notes */}
+                    {activeBooking.adminNotes && (
+                      <div className="px-6 py-4 border-b border-border bg-secondary">
+                        <p className="font-sans text-[10px] tracking-[0.12em] uppercase text-muted-foreground mb-2">Note from Studio AYNSH</p>
+                        <p className="font-sans text-sm text-foreground leading-relaxed">{activeBooking.adminNotes}</p>
+                      </div>
+                    )}
+
+                    {/* Pricing */}
+                    {activeBooking.totalAmount && (
+                      <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+                        <div>
+                          <p className="font-sans text-[10px] tracking-[0.12em] uppercase text-muted-foreground">Total Amount</p>
+                          <p className="font-serif text-xl text-foreground mt-0.5">{activeBooking.totalAmount}</p>
+                        </div>
+                        {activeBooking.depositPaid && (
+                          <span className="font-sans text-[10px] tracking-[0.1em] uppercase text-emerald-700 border border-emerald-200 bg-emerald-50 px-3 py-1.5">
+                            Deposit Paid
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Message box */}
+                    <div className="px-6 py-5">
+                      <p className="font-sans text-[10px] tracking-[0.12em] uppercase text-muted-foreground mb-3 flex items-center gap-2">
+                        <MessageSquare size={12} />
+                        Send a Message to Studio
+                      </p>
+                      <div className="flex gap-3 items-center">
+                        <input
+                          type="text"
+                          value={messageText}
+                          onChange={(e) => setMessageText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) handleSendMessage()
+                          }}
+                          placeholder="Ask a question or share an update..."
+                          className="flex-1 border-b border-border bg-transparent py-2 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none transition-colors duration-200"
+                        />
+                        <button
+                          onClick={handleSendMessage}
+                          disabled={!messageText.trim() || sending}
+                          className="text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors duration-200 shrink-0"
+                          aria-label="Send message"
+                        >
+                          {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="border border-dashed border-border h-64 flex items-center justify-center"
+                  >
+                    <p className="font-sans text-sm text-muted-foreground/60">Select a booking to view details</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-          <div className="border-t border-border pt-6">
-            <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-2">Date</p>
-            <p className="font-serif text-foreground text-xl">15 March 2024</p>
-          </div>
-          <div className="border-t border-border pt-6">
-            <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-2">Package</p>
-            <p className="font-serif text-foreground text-xl">Signature Wedding — ₹1,20,000</p>
-          </div>
-          <div className="border-t border-border pt-6">
-            <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-2">Delivery Timeline</p>
-            <p className="font-serif text-foreground text-xl">30–45 working days post-session</p>
-          </div>
-          <div className="border-t border-border pt-6">
-            <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-2">Photographer</p>
-            <p className="font-serif text-foreground text-xl">Praveen Gupta</p>
-          </div>
-          <div className="border-t border-border pt-6">
-            <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-2">Contact</p>
-            <a href="tel:+917084019414" className="font-serif text-foreground text-xl hover:text-accent transition-colors duration-200">
-              +91 7084019414
-            </a>
-          </div>
+        )}
+
+        {/* Quick links */}
+        <div className="border-t border-border pt-8 flex flex-wrap gap-6">
+          <Link href="/booking" className="font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200">New Booking</Link>
+          <Link href="/portfolio" className="font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200">View Portfolio</Link>
+          <Link href="/contact" className="font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200">Contact Us</Link>
         </div>
-      )}
-    </section>
+      </div>
+    </main>
   )
 }
