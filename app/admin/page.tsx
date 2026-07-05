@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 }
 
 export default async function AdminPage() {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const headersList = await headers()
+  const session = await auth.api.getSession({ headers: headersList })
   if (!session?.user?.id) redirect('/sign-in')
 
   // Read role from DB — never trust session.user for authorization decisions

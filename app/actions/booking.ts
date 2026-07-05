@@ -12,7 +12,8 @@ import { randomUUID } from 'crypto'
 
 async function getOptionalUserId(): Promise<string | null> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
+    const headersList = await headers()
+    const session = await auth.api.getSession({ headers: headersList })
     return session?.user?.id ?? null
   } catch {
     return null
@@ -20,7 +21,8 @@ async function getOptionalUserId(): Promise<string | null> {
 }
 
 async function getRequiredUserId(): Promise<string> {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const headersList = await headers()
+  const session = await auth.api.getSession({ headers: headersList })
   if (!session?.user) throw new Error('Unauthorized')
   return session.user.id
 }
@@ -347,7 +349,8 @@ export async function getBookingMessages(bookingId: string) {
 }
 
 export async function sendClientMessage(bookingId: string, content: string) {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const headersList = await headers()
+  const session = await auth.api.getSession({ headers: headersList })
   if (!session?.user) throw new Error('Unauthorized')
 
   // Validate inputs

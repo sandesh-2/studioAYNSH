@@ -15,7 +15,8 @@ export const metadata: Metadata = {
 }
 
 export default async function PortalPage() {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const headersList = await headers()
+  const session = await auth.api.getSession({ headers: headersList })
   if (!session?.user?.id) redirect('/sign-in')
 
   // Read role from DB — never rely on session for authorization

@@ -15,7 +15,8 @@ import { randomUUID } from 'crypto'
  * escalation through stale or tampered session data.
  */
 async function requireAdmin() {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const headersList = await headers()
+  const session = await auth.api.getSession({ headers: headersList })
   if (!session?.user?.id) throw new Error('Unauthorized')
 
   const [dbUser] = await db
