@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { booking } from '@/lib/db/schema'
-import { desc, eq } from 'drizzle-orm'
+import { booking, user } from '@/lib/db/schema'
+import { desc, eq, or } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Navigation } from '@/components/navigation'
@@ -16,12 +16,27 @@ export const metadata: Metadata = {
 
 export default async function PortalPage() {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) redirect('/sign-in')
+  if (!session?.user?.id) redirect('/sign-in')
 
+  // Read role from DB — never rely on session for authorization
+  const [dbUser] = await db
+    .select({ role: user.role })
+    .from(user)
+    .where(eq(user.id, session.user.id))
+    .limit(1)
+
+  if (dbUser?.role === 'admin') redirect('/admin')
+
+  // Fetch bookings by userId OR by email (covers bookings made before sign-up)
   const bookings = await db
     .select()
     .from(booking)
-    .where(eq(booking.userId, session.user.id))
+    .where(
+      or(
+        eq(booking.userId, session.user.id),
+        eq(booking.clientEmail, session.user.email.toLowerCase()),
+      ),
+    )
     .orderBy(desc(booking.createdAt))
 
   return (

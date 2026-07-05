@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { booking, message } from '@/lib/db/schema'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, or } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
@@ -25,6 +25,22 @@ async function getRequiredUserId(): Promise<string> {
   return session.user.id
 }
 
+// ── Validation helpers ─────────────────────────────────────────────────────
+
+const VALID_SERVICES = new Set(['wedding', 'prewedding', 'portrait', 'fashion', 'drone', 'other'])
+const VALID_STATUSES = new Set(['pending', 'confirmed', 'completed', 'cancelled'])
+
+function sanitize(v: string | undefined, maxLen: number): string | null {
+  if (!v) return null
+  return v.trim().slice(0, maxLen)
+}
+
+function assertNonEmpty(v: string | undefined, field: string): string {
+  const s = v?.trim()
+  if (!s) throw new Error(`${field} is required`)
+  return s
+}
+
 // ── Booking submission (public — no auth required) ─────────────────────────
 
 export interface BookingInput {
@@ -44,31 +60,44 @@ export interface BookingInput {
 }
 
 export async function createBooking(input: BookingInput) {
-  const userId = await getOptionalUserId()
+  // ── Server-side validation (never trust client) ────────────────────────
+  const clientName  = assertNonEmpty(input.clientName, 'Name').slice(0, 120)
+  const clientEmail = assertNonEmpty(input.clientEmail, 'Email').toLowerCase().slice(0, 254)
+  const clientPhone = assertNonEmpty(input.clientPhone, 'Phone').slice(0, 20)
+  const location    = assertNonEmpty(input.location, 'Location').slice(0, 200)
+  const service     = assertNonEmpty(input.service, 'Service')
+  const eventDate   = assertNonEmpty(input.eventDate, 'Event date')
 
+  // Simple email format check
+  if (!/^\S+@\S+\.\S+$/.test(clientEmail)) throw new Error('Invalid email address')
+
+  // Whitelist service values to prevent garbage data
+  if (!VALID_SERVICES.has(service)) throw new Error('Invalid service selection')
+
+  const userId = await getOptionalUserId()
   const id = randomUUID()
 
   await db.insert(booking).values({
     id,
     userId,
-    clientName: input.clientName,
-    clientEmail: input.clientEmail,
-    clientPhone: input.clientPhone,
-    service: input.service,
-    eventDate: input.eventDate,
-    eventTime: input.eventTime ?? null,
-    location: input.location,
-    duration: input.duration ?? null,
-    budget: input.budget ?? null,
-    guestCount: input.guestCount ?? null,
-    shootTheme: input.shootTheme ?? null,
-    specialRequests: input.specialRequests ?? null,
-    howHeard: input.howHeard ?? null,
+    clientName,
+    clientEmail,
+    clientPhone,
+    service,
+    eventDate,
+    eventTime:       sanitize(input.eventTime, 20),
+    location,
+    duration:        sanitize(input.duration, 40),
+    budget:          sanitize(input.budget, 40),
+    guestCount:      sanitize(input.guestCount, 10),
+    shootTheme:      sanitize(input.shootTheme, 120),
+    specialRequests: sanitize(input.specialRequests, 2000),
+    howHeard:        sanitize(input.howHeard, 40),
     status: 'pending',
   })
 
   // Send confirmation email via resend (graceful no-op if key missing)
-  await sendConfirmationEmail(input, id)
+  await sendConfirmationEmail({ ...input, clientName, clientEmail }, id)
 
   revalidatePath('/portal')
   revalidatePath('/admin')
@@ -120,7 +149,7 @@ async function sendConfirmationEmail(input: BookingInput, bookingId: string) {
             </table>
           </div>
           <p style="font-family:Arial,sans-serif;font-size:13px;color:#6B6560;line-height:1.7;">
-            You can track your booking status anytime through the <a href="${process.env.BETTER_AUTH_URL ?? process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '#'}/portal" style="color:#C4A882;">Client Portal</a>.
+            You can track your booking status anytime through the <a href="${process.env.BETTER_AUTH_URL ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '#')}/portal" style="color:#C4A882;">Client Portal</a>.
           </p>
         </div>
         <div style="background:#F5F3EF;padding:24px 40px;text-align:center;">
@@ -167,16 +196,37 @@ export async function getBookingMessages(bookingId: string) {
 }
 
 export async function sendClientMessage(bookingId: string, content: string) {
-  const userId = await getRequiredUserId()
-  const [b] = await db.select().from(booking).where(and(eq(booking.id, bookingId), eq(booking.userId, userId)))
-  if (!b) throw new Error('Not found')
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user) throw new Error('Unauthorized')
+
+  // Validate inputs
+  if (!bookingId || typeof bookingId !== 'string') throw new Error('Invalid booking')
+  const safeContent = content?.trim().slice(0, 2000)
+  if (!safeContent) throw new Error('Message cannot be empty')
+
+  // Verify ownership: booking must match this user by userId OR email.
+  // This covers bookings created while logged in AND bookings matched by email (pre-signup).
+  const [b] = await db
+    .select({ id: booking.id })
+    .from(booking)
+    .where(
+      and(
+        eq(booking.id, bookingId),
+        or(
+          eq(booking.userId, session.user.id),
+          eq(booking.clientEmail, session.user.email.toLowerCase()),
+        ),
+      ),
+    )
+    .limit(1)
+  if (!b) throw new Error('Not found or access denied')
 
   await db.insert(message).values({
     id: randomUUID(),
     bookingId,
-    senderId: userId,
+    senderId: session.user.id,
     senderRole: 'client',
-    content,
+    content: safeContent,
   })
   revalidatePath('/portal')
 }

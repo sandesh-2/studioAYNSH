@@ -29,11 +29,12 @@ export function AuthForm({ mode }: AuthFormProps) {
     try {
       if (mode === 'sign-up') {
         const res = await authClient.signUp.email({
-          name,
-          email,
+          name: name.trim().slice(0, 120),
+          email: email.trim().toLowerCase(),
           password,
           callbackURL: '/portal',
-        })
+          ...(phone.trim() && { phone: phone.trim().slice(0, 20) }),
+        } as Parameters<typeof authClient.signUp.email>[0])
         if (res.error) throw new Error(res.error.message)
       } else {
         const res = await authClient.signIn.email({

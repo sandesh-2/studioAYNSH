@@ -1,5 +1,5 @@
 import { betterAuth } from 'better-auth'
-import { Pool } from 'pg'
+import { pool } from '@/lib/db'  // reuse the singleton pool
 
 const trustedOrigins: string[] = []
 if (process.env.BETTER_AUTH_URL) trustedOrigins.push(process.env.BETTER_AUTH_URL)
@@ -16,10 +16,13 @@ const baseURL =
     : process.env.V0_RUNTIME_URL)
 
 export const auth = betterAuth({
-  database: new Pool({ connectionString: process.env.DATABASE_URL }),
+  database: pool,
   baseURL,
   trustedOrigins,
-  emailAndPassword: { enabled: true },
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+  },
   user: {
     additionalFields: {
       role: { type: 'string', defaultValue: 'client' },
