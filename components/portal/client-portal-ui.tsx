@@ -102,18 +102,18 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
     <main className="pt-20 min-h-screen bg-background">
       {/* Header */}
       <section className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-10 flex items-start justify-between gap-6 flex-wrap">
+        <div className="max-w-6xl mx-auto px-6 py-12 flex items-start justify-between gap-6 flex-wrap">
           <div>
-            <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">Client Portal</p>
+            <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground mb-3">Client Portal</p>
             <h1 className="font-serif text-3xl md:text-4xl text-foreground font-light">
               Welcome, {user.name.split(' ')[0]}
             </h1>
-            <p className="font-sans text-sm text-muted-foreground mt-1">{user.email}</p>
+            <p className="font-sans text-sm text-muted-foreground mt-2">{user.email}</p>
           </div>
           <button
             onClick={handleSignOut}
             disabled={signingOut}
-            className="flex items-center gap-2 font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200 mt-2 disabled:opacity-50"
+            className="flex items-center gap-2 font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200 mt-3 disabled:opacity-50"
           >
             <LogOut size={14} />
             {signingOut ? 'Signing out...' : 'Sign Out'}
@@ -121,7 +121,7 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-6 py-10 space-y-10">
+      <div className="max-w-6xl mx-auto px-6 py-12 space-y-12">
 
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -153,14 +153,14 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start min-h-96">
 
             {/* Booking list */}
-            <div className="lg:col-span-2 space-y-3">
-              <p className="font-sans text-xs tracking-[0.18em] uppercase text-muted-foreground">Your Sessions</p>
+            <div className="lg:col-span-1 space-y-4">
+              <p className="font-sans text-xs tracking-[0.18em] uppercase text-muted-foreground mb-4">Your Sessions</p>
 
               {/* Sort + Filter row */}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <div ref={sortRef} className="relative flex-1">
                   <button
                     onClick={() => { setShowSortMenu((v) => !v); setShowFilterMenu(false) }}
@@ -257,10 +257,11 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
               </AnimatePresence>
 
               {/* Booking cards */}
-              {filteredBookings.length === 0 ? (
-                <p className="font-sans text-sm text-muted-foreground text-center py-6">No bookings match your filter.</p>
-              ) : (
-                filteredBookings.map((b) => {
+              <div className="space-y-2 pt-2">
+                {filteredBookings.length === 0 ? (
+                  <p className="font-sans text-sm text-muted-foreground text-center py-6">No bookings match your filter.</p>
+                ) : (
+                  filteredBookings.map((b) => {
                   const cfg = STATUS_CONFIG[b.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending
                   const isActive = activeBooking?.id === b.id
                   return (
@@ -288,9 +289,10 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                         </div>
                       </div>
                     </motion.button>
-                  )
-                })
-              )}
+                    )
+                  })
+                )}
+              </div>
 
               <Link
                 href="/booking"
@@ -301,7 +303,7 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
             </div>
 
             {/* Booking detail panel */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-2">
               <AnimatePresence mode="wait">
                 {activeBooking ? (
                   <motion.div
