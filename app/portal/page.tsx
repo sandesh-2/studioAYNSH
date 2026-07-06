@@ -1,13 +1,14 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { booking, user } from '@/lib/db/schema'
-import { desc, eq, or } from 'drizzle-orm'
+import { user, bookingV2, bookingEvent, bookingFinancials, bookingNote } from '@/lib/db/schema'
+import { desc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { ClientPortalUI } from '@/components/portal/client-portal-ui'
 import type { Metadata } from 'next'
+import type { FullBooking } from '@/lib/db/schema'
 
 export const metadata: Metadata = {
   title: 'Client Portal — Studio AYNSH',
@@ -28,22 +29,43 @@ export default async function PortalPage() {
 
   if (dbUser?.role === 'admin') redirect('/admin')
 
-  // Fetch bookings by userId OR by email (covers bookings made before sign-up)
-  const bookings = await db
+  // Fetch bookings for this user from the new normalised tables
+  const coreBookings = await db
     .select()
-    .from(booking)
-    .where(
-      or(
-        eq(booking.userId, session.user.id),
-        eq(booking.clientEmail, session.user.email.toLowerCase()),
-      ),
-    )
-    .orderBy(desc(booking.createdAt))
+    .from(bookingV2)
+    .where(eq(bookingV2.userId, session.user.id))
+    .orderBy(desc(bookingV2.createdAt))
+
+  let fullBookings: FullBooking[] = []
+
+  if (coreBookings.length > 0) {
+    const [events, financials, notes] = await Promise.all([
+      db.select().from(bookingEvent),
+      db.select().from(bookingFinancials),
+      db.select().from(bookingNote).orderBy(desc(bookingNote.createdAt)),
+    ])
+
+    const eventsMap     = new Map(events.map((e) => [e.bookingId, e]))
+    const financialsMap = new Map(financials.map((f) => [f.bookingId, f]))
+    const notesMap      = new Map<string, typeof notes>()
+    for (const n of notes) {
+      const arr = notesMap.get(n.bookingId) ?? []
+      arr.push(n)
+      notesMap.set(n.bookingId, arr)
+    }
+
+    fullBookings = coreBookings.map((b) => ({
+      ...b,
+      event:      eventsMap.get(b.id) ?? null,
+      financials: financialsMap.get(b.id) ?? null,
+      notes:      notesMap.get(b.id) ?? [],
+    }))
+  }
 
   return (
     <>
       <Navigation />
-      <ClientPortalUI user={session.user} bookings={bookings} />
+      <ClientPortalUI user={session.user} bookings={fullBookings} />
       <Footer />
     </>
   )
