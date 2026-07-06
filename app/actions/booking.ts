@@ -14,7 +14,15 @@ import {
 import { desc, eq, inArray } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { randomUUID } from 'crypto'
+
+// UUID v4 generator that works in Edge runtime
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
 
 // ── Auth helper ────────────────────────────────────────────────────────────
 
@@ -78,10 +86,10 @@ export async function createBooking(input: BookingInput) {
 
   const userId = await getRequiredUserId()
 
-  const bookingId  = randomUUID()
-  const eventId    = randomUUID()
-  const financialId = randomUUID()
-  const logId      = randomUUID()
+  const bookingId  = uuidv4()
+  const eventId    = uuidv4()
+  const financialId = uuidv4()
+  const logId      = uuidv4()
 
   // ── Insert core booking ────────────────────────────────────────────────
   await db.insert(bookingV2).values({
