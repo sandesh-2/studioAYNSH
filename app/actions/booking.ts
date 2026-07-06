@@ -43,7 +43,7 @@ function assertNonEmpty(v: string | undefined, field: string): string {
   return s
 }
 
-// ── Booking submission (public — no auth required) ─────────────────────────
+// ──  submission (public — no auth required) ─────────────────────────
 
 export interface BookingInput {
   clientName: string
@@ -185,7 +185,7 @@ async function sendConfirmationEmail(input: BookingInput, bookingId: string) {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Studio AYNSH <bookings@studioaynsh.com>',
+        from: 'Studio AYNSH <onboarding@resend.dev>',
         to: [input.clientEmail],
         subject: `Booking Confirmed — ${serviceName} | Studio AYNSH`,
         html,
@@ -318,7 +318,7 @@ async function sendStudioOwnerNotification(bookingDetails: {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Studio AYNSH <bookings@studioaynsh.com>',
+        from: 'Studio AYNSH <onboarding@resend.dev>',
         to: [studioEmail],
         subject: `📸 New Booking: ${serviceName} on ${bookingDetails.eventDate}`,
         html,
