@@ -123,17 +123,20 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
 
       <div className="max-w-6xl mx-auto px-6 py-12 space-y-12">
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { label: 'Total Bookings', value: stats.total },
             { label: 'Confirmed',      value: stats.confirmed },
             { label: 'Pending',        value: stats.pending },
             { label: 'Completed',      value: stats.completed },
           ].map((s) => (
-            <div key={s.label} className="border border-border p-5">
-              <p className="font-serif text-3xl text-foreground font-light">{s.value}</p>
-              <p className="font-sans text-xs text-muted-foreground tracking-[0.12em] uppercase mt-1">{s.label}</p>
+            <div 
+              key={s.label} 
+              className="border border-border bg-background rounded-sm hover:border-foreground/40 transition-colors duration-200 p-6"
+            >
+              <p className="font-serif text-4xl text-foreground font-light tracking-tight">{s.value}</p>
+              <p className="font-sans text-xs text-muted-foreground tracking-[0.15em] uppercase mt-3">{s.label}</p>
             </div>
           ))}
         </div>
