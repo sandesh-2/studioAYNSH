@@ -4,27 +4,37 @@ import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Studio coordinates: Taramandal, Gorakhpur
-const STUDIO_LAT = 26.1926
-const STUDIO_LNG = 83.3686
+// Studio coordinates: Studio AYNSH, Gorakhpur
+const STUDIO_LAT = 26.722472
+const STUDIO_LNG = 83.390111
 const STUDIO_NAME = 'Studio AYNSH'
+const STUDIO_ADDRESS = 'Gorakhpur, Uttar Pradesh, India'
 
 export function StudioMap() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<L.Map | null>(null)
+  const osm = useRef<L.TileLayer | null>(null)
+  const satellite = useRef<L.TileLayer | null>(null)
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return
 
     // Initialize the map
-    const map = L.map(mapRef.current).setView([STUDIO_LAT, STUDIO_LNG], 15)
+    const map = L.map(mapRef.current).setView([STUDIO_LAT, STUDIO_LNG], 16)
 
-    // Add OpenStreetMap tiles (free, no API key needed, shows real roads and landmarks)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // OpenStreetMap layer (default)
+    osm.current = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
       minZoom: 3,
     }).addTo(map)
+
+    // USGS Satellite/Aerial view layer
+    satellite.current = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 19,
+      minZoom: 3,
+    })
 
     // Create custom marker with brand color
     const studioIcon = L.divIcon({
@@ -60,14 +70,26 @@ export function StudioMap() {
 
     // Add marker at studio location
     const marker = L.marker([STUDIO_LAT, STUDIO_LNG], { icon: studioIcon })
-      .bindPopup(`<div style="text-align: center; font-family: serif; padding: 8px;">
-        <strong>${STUDIO_NAME}</strong><br/>
-        <small>Taramandal, Gorakhpur<br/>Uttar Pradesh, India</small>
+      .bindPopup(`<div style="text-align: center; font-family: serif; padding: 10px; min-width: 180px;">
+        <strong style="font-size: 1.1em;">${STUDIO_NAME}</strong><br/>
+        <small style="color: #666;">${STUDIO_ADDRESS}</small><br/>
+        <small style="color: #999; margin-top: 6px; display: block;">
+          <a href="https://google.com/maps/search/?api=1&query=${STUDIO_LAT},${STUDIO_LNG}" target="_blank" style="color: #d4af37; text-decoration: none;">View on Google Maps</a>
+        </small>
       </div>`)
       .addTo(map)
 
     // Open popup on load
     marker.openPopup()
+
+    // Add layer control for switching between map and satellite
+    if (osm.current && satellite.current) {
+      const baseLayers = {
+        'Map': osm.current,
+        'Satellite': satellite.current,
+      }
+      L.control.layers(baseLayers, {}, { position: 'topright' }).addTo(map)
+    }
 
     mapInstance.current = map
 
