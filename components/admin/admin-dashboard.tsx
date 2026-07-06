@@ -76,6 +76,11 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
   const [isPending, startTransition] = useTransition()
   const [signingOut, setSigningOut] = useState(false)
 
+  // Close detail panel when filters change
+  useEffect(() => {
+    setActiveBooking(null)
+  }, [statusFilter, serviceFilter, sortMode, dateFrom, dateTo])
+
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {

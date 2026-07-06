@@ -4,6 +4,8 @@ import { user } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { Navigation } from '@/components/navigation'
+import { Footer } from '@/components/footer'
 import { AdminDashboard } from '@/components/admin/admin-dashboard'
 import { getAllBookings, getAllClients } from '@/app/actions/admin'
 import type { Metadata } from 'next'
@@ -31,5 +33,11 @@ export default async function AdminPage() {
     getAllClients(),
   ])
 
-  return <AdminDashboard bookings={bookings} clients={clients} adminName={session.user.name} />
+  return (
+    <>
+      <Navigation />
+      <AdminDashboard bookings={bookings} clients={clients} adminName={session.user.name} />
+      <Footer />
+    </>
+  )
 }
