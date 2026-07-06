@@ -20,6 +20,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition, useRef, useEffect } from 'react'
 
+// UUID v4 generator for client-side optimistic updates
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 const STATUS_CONFIG = {
   pending:   { label: 'Pending',   color: 'text-amber-600',   bg: 'bg-amber-50   border-amber-200',         Icon: AlertCircle },
   confirmed: { label: 'Confirmed', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200',       Icon: CheckCircle },
@@ -118,7 +127,7 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
     startTransition(async () => {
       await addBookingNote(activeBooking.id, newNote)
       const optimisticNote = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         bookingId: activeBooking.id,
         authorId: '',
         content: newNote.trim(),

@@ -184,9 +184,12 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
         setSubmitted(true)
         reset()
         setStep(1)
+      } else {
+        setServerError(result.error || 'Booking could not be created. Please try again.')
       }
-    } catch {
-      setServerError('Something went wrong. Please try again or contact us directly.')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again or contact us.'
+      setServerError(message)
     } finally {
       setSubmitting(false)
     }
