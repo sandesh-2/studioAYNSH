@@ -1,6 +1,7 @@
 'use client'
 
 import { motion, useInView } from 'framer-motion'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRef } from 'react'
 
@@ -10,6 +11,7 @@ const services = [
     number: '01',
     title: 'Wedding Photography',
     subtitle: 'Destination & Ceremony',
+    image: '/images/service-wedding.png',
     description:
       'Your wedding day is the most important chapter of your love story. We document it with cinematic precision — from the quiet moments of preparation to the grand celebration, every emotion preserved forever.',
     includes: ['Full-day coverage', 'Second shooter', 'Edited digital gallery', 'Print-ready files', 'Private online gallery', 'Luxury album (optional)'],
@@ -24,6 +26,7 @@ const services = [
     number: '02',
     title: 'Pre-Wedding',
     subtitle: 'Romance & Storytelling',
+    image: '/images/service-prewedding.png',
     description:
       'Before the vows, your love deserves its own story. Our pre-wedding sessions are crafted editorial experiences — locations chosen carefully, light sculpted thoughtfully, moments guided genuinely.',
     includes: ['3–5 hour shoot', 'Multiple locations', '200+ edited images', 'Outfit changes', 'Private gallery', 'Cinematic BTS reel'],
@@ -38,6 +41,7 @@ const services = [
     number: '03',
     title: 'Portrait Photography',
     subtitle: 'Individual & Editorial',
+    image: '/images/service-portrait.png',
     description:
       'A portrait is not just a photograph — it is a revelation of character. Whether for personal branding, family memories, or artistic expression, we create portraits that speak with quiet authority.',
     includes: ['Studio or outdoor session', '60+ edited images', 'Wardrobe consultation', 'Retouching', 'Print-ready files', 'Digital delivery'],
@@ -52,6 +56,7 @@ const services = [
     number: '04',
     title: 'Fashion Photography',
     subtitle: 'Commercial & Editorial',
+    image: '/images/service-fashion.png',
     description:
       'Fashion photography at its finest — where garments meet vision and brands are brought to life. We create imagery that does not just show clothes, but tells the complete story of the collection.',
     includes: ['Concept development', 'Styling collaboration', 'Multiple looks', 'Retouched selects', 'Commercial licensing', 'Campaign deliverables'],
@@ -66,6 +71,7 @@ const services = [
     number: '05',
     title: 'Drone Photography',
     subtitle: 'Aerial & Landscape',
+    image: '/images/service-drone.png',
     description:
       'See your world from a perspective that takes your breath away. Our certified drone operators capture sweeping aerial footage and photographs that add an entirely new dimension to your visual story.',
     includes: ['Licensed drone operators', '4K aerial footage', 'Still photography', 'Post-production', 'Multiple passes', 'Delivery within 7 days'],
@@ -80,6 +86,7 @@ const services = [
     number: '06',
     title: 'Commercial Photography',
     subtitle: 'Brand & Product',
+    image: '/images/service-commercial.png',
     description:
       'Visual storytelling that positions your brand at the intersection of aspiration and authenticity. From product photography to brand campaigns, we create imagery that converts and endures.',
     includes: ['Art direction', 'Concept development', 'Product styling', 'Commercial licensing', 'Brand guidelines adherence', 'Multiple use formats'],
@@ -94,6 +101,7 @@ const services = [
 function ServiceCard({ service, index }: { service: typeof services[0]; index: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { once: true, margin: '-80px' })
+  const imageRight = index % 2 !== 0
 
   return (
     <motion.div
@@ -104,21 +112,48 @@ function ServiceCard({ service, index }: { service: typeof services[0]; index: n
       transition={{ duration: 0.8, delay: index * 0.05, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="border-t border-border pt-16 pb-20"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-        {/* Number + title */}
-        <div className="lg:col-span-4">
+      {/* Top row: number + title + image */}
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 mb-12 items-start ${imageRight ? '' : ''}`}>
+        {/* Title block */}
+        <div className={imageRight ? 'lg:order-1' : 'lg:order-2'}>
           <p className="font-sans text-xs text-muted-foreground/40 tracking-[0.25em] mb-4">{service.number}</p>
-          <h2 className="font-serif font-medium text-foreground text-3xl lg:text-4xl leading-tight mb-2">
+          <h2 className="font-serif font-medium text-foreground text-3xl lg:text-5xl leading-tight mb-3">
             {service.title}
           </h2>
-          <p className="font-sans text-xs text-muted-foreground tracking-[0.2em] uppercase">{service.subtitle}</p>
+          <p className="font-sans text-xs text-muted-foreground tracking-[0.2em] uppercase mb-6">{service.subtitle}</p>
+          <p className="font-sans text-base text-muted-foreground leading-relaxed">{service.description}</p>
         </div>
 
-        {/* Description + includes */}
-        <div className="lg:col-span-4">
-          <p className="font-sans text-base text-muted-foreground leading-relaxed mb-8">{service.description}</p>
-          <h3 className="font-sans text-xs font-medium tracking-[0.2em] uppercase text-foreground mb-4">What&apos;s Included</h3>
-          <ul className="space-y-2">
+        {/* Service image */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={inView ? { opacity: 1, scale: 1 } : {}}
+          transition={{ duration: 0.9, delay: index * 0.05 + 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className={`relative aspect-[4/3] overflow-hidden bg-muted ${imageRight ? 'lg:order-2' : 'lg:order-1'}`}
+        >
+          <Image
+            src={service.image}
+            alt={`${service.title} by Studio AYNSH`}
+            fill
+            className="object-cover transition-transform duration-700 hover:scale-105"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+          />
+          {/* Subtle overlay with category label */}
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-transparent to-transparent" />
+          <div className="absolute bottom-4 left-5">
+            <p className="font-sans text-[10px] text-background/70 tracking-[0.22em] uppercase">{service.subtitle}</p>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Bottom row: includes + packages */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
+        {/* What's included */}
+        <div>
+          <h3 className="font-sans text-xs font-medium tracking-[0.2em] uppercase text-foreground mb-5">
+            What&apos;s Included
+          </h3>
+          <ul className="space-y-2.5">
             {service.includes.map((item) => (
               <li key={item} className="flex items-center gap-3 font-sans text-sm text-muted-foreground">
                 <span className="w-1 h-1 rounded-full bg-accent shrink-0" />
@@ -129,11 +164,14 @@ function ServiceCard({ service, index }: { service: typeof services[0]; index: n
         </div>
 
         {/* Packages */}
-        <div className="lg:col-span-4">
-          <h3 className="font-sans text-xs font-medium tracking-[0.2em] uppercase text-foreground mb-6">Packages</h3>
+        <div>
+          <h3 className="font-sans text-xs font-medium tracking-[0.2em] uppercase text-foreground mb-5">Packages</h3>
           <div className="space-y-3">
             {service.packages.map((pkg) => (
-              <div key={pkg.name} className="flex items-start justify-between p-4 border border-border hover:border-foreground/30 transition-colors duration-300">
+              <div
+                key={pkg.name}
+                className="flex items-start justify-between p-4 border border-border hover:border-foreground/30 transition-colors duration-300"
+              >
                 <div>
                   <p className="font-serif font-medium text-foreground text-lg">{pkg.name}</p>
                   <p className="font-sans text-xs text-muted-foreground mt-1">{pkg.detail}</p>
