@@ -215,10 +215,10 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
     <div className="min-h-screen bg-background">
       {/* Top bar - positioned below Navigation (h-20) */}
       <header className="border-b border-border bg-background sticky top-20 z-30">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             <Link href="/" className="font-serif text-base text-foreground tracking-widest">STUDIO AYNSH</Link>
-            <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-muted-foreground border border-border px-2 py-0.5">Admin</span>
+            <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-muted-foreground border border-border px-2.5 py-1">Admin</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="font-sans text-xs text-muted-foreground hidden sm:block">{adminName}</span>
@@ -233,7 +233,7 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -267,23 +267,23 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
 
         {/* Bookings tab */}
         {tab === 'bookings' && (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start min-h-96">
             {/* List */}
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-1 space-y-4">
               {/* Search */}
-              <div className="relative">
-                <Search size={13} className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <div className="relative mb-4">
+                <Search size={14} className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search name, email, location..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-5 border-b border-border bg-transparent py-2 font-sans text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none transition-colors"
+                  className="w-full pl-6 border-b border-border bg-transparent py-2.5 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none transition-colors"
                 />
               </div>
 
               {/* Sort + Filter row */}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <div ref={sortRef} className="relative flex-1">
                   <button
                     onClick={() => { setShowSortMenu((v) => !v); setShowFilterMenu(false) }}
@@ -355,7 +355,7 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
               </div>
 
               {/* Status filter pills */}
-              <div className="flex gap-1.5 flex-wrap">
+              <div className="flex gap-2 flex-wrap pt-1">
                 {(['all', ...STATUSES] as const).map((s) => (
                   <button key={s} onClick={() => setStatusFilter(s)}
                     className={`font-sans text-[10px] tracking-[0.1em] uppercase border px-2.5 py-1 transition-all duration-150 ${
@@ -396,10 +396,11 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
               </AnimatePresence>
 
               {/* Booking list */}
-              {filteredBookings.length === 0 ? (
-                <p className="font-sans text-sm text-muted-foreground py-8 text-center">No bookings found.</p>
-              ) : (
-                filteredBookings.map((b) => {
+              <div className="space-y-2 pt-2">
+                {filteredBookings.length === 0 ? (
+                  <p className="font-sans text-sm text-muted-foreground py-8 text-center">No bookings found.</p>
+                ) : (
+                  filteredBookings.map((b) => {
                   const cfg = STATUS_CONFIG[b.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending
                   const isActive = activeBooking?.id === b.id
                   return (
@@ -426,12 +427,13 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
                       </div>
                     </motion.button>
                   )
-                })
-              )}
+                  })
+                )}
+              </div>
             </div>
 
             {/* Detail panel */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-2">
               <AnimatePresence mode="wait">
                 {activeBooking ? (
                   <motion.div
