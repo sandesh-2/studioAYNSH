@@ -69,6 +69,8 @@ export const booking = pgTable('booking', {
   specialRequests: text('specialRequests'),
   howHeard: text('howHeard'),
   status: text('status').notNull().default('pending'),  // pending | confirmed | completed | cancelled
+  // Progress tracking: enquiry_received | contract_signed | advance_received | shoot_scheduled | shoot_completed | editing_in_progress | final_delivery
+  progressStage: text('progressStage').notNull().default('enquiry_received'),
   adminNotes: text('adminNotes'),
   totalAmount: text('totalAmount'),
   depositPaid: boolean('depositPaid').default(false),
@@ -90,3 +92,15 @@ export const message = pgTable('message', {
 export type User = typeof user.$inferSelect
 export type Booking = typeof booking.$inferSelect
 export type Message = typeof message.$inferSelect
+
+export const PROGRESS_STAGES = [
+  { key: 'enquiry_received',    label: 'Enquiry Received',    description: 'Your enquiry has been received and is under review.' },
+  { key: 'contract_signed',     label: 'Contract Signed',     description: 'The contract has been signed and your booking is confirmed.' },
+  { key: 'advance_received',    label: 'Advance Received',    description: 'Advance payment has been received and your date is locked.' },
+  { key: 'shoot_scheduled',     label: 'Shoot Scheduled',     description: 'Your shoot has been scheduled. Please review the details.' },
+  { key: 'shoot_completed',     label: 'Shoot Completed',     description: 'The shoot is complete. Post-processing has begun.' },
+  { key: 'editing_in_progress', label: 'Editing In Progress', description: 'Your images are being carefully edited and curated.' },
+  { key: 'final_delivery',      label: 'Final Delivery',      description: 'Your final gallery has been delivered. Enjoy your memories!' },
+] as const
+
+export type ProgressStageKey = typeof PROGRESS_STAGES[number]['key']

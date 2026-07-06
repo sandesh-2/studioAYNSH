@@ -1,6 +1,13 @@
 import { Footer } from '@/components/footer'
 import { Navigation } from '@/components/navigation'
 import { BookingForm } from '@/components/booking/booking-form'
+import { auth } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { user } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -9,7 +16,26 @@ export const metadata: Metadata = {
     'Book your photography session with Studio AYNSH. Wedding, portrait, pre-wedding, fashion, and commercial photography in Gorakhpur and across India.',
 }
 
-export default function BookingPage() {
+export default async function BookingPage() {
+  const headersList = await headers()
+  const session = await auth.api.getSession({ headers: headersList })
+
+  // Require sign-in — redirect guests to sign-in with a return URL
+  if (!session?.user) {
+    redirect('/auth/signin?redirect=/booking')
+  }
+
+  // Fetch fresh user data (name, email, phone) for autofill
+  const [dbUser] = await db
+    .select({ name: user.name, email: user.email, phone: user.phone })
+    .from(user)
+    .where(eq(user.id, session.user.id))
+    .limit(1)
+
+  const loggedInUser = dbUser
+    ? { name: dbUser.name, email: dbUser.email, phone: dbUser.phone ?? '' }
+    : null
+
   return (
     <>
       <Navigation />
@@ -33,6 +59,17 @@ export default function BookingPage() {
                 Every great photograph begins with a conversation. Tell us about your vision and
                 we&apos;ll craft the perfect session together.
               </p>
+
+              {/* Signed-in indicator */}
+              <div className="inline-flex items-center gap-2 border border-border px-4 py-2.5 mb-8">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                <span className="font-sans text-xs text-muted-foreground">
+                  Booking as <span className="text-foreground">{dbUser?.name ?? session.user.name}</span>
+                </span>
+                <Link href="/portal" className="font-sans text-[10px] tracking-[0.1em] uppercase text-muted-foreground/60 hover:text-foreground transition-colors duration-200 ml-1">
+                  Portal
+                </Link>
+              </div>
 
               {/* Contact details */}
               <div className="space-y-6">
@@ -71,7 +108,7 @@ export default function BookingPage() {
             </div>
 
             {/* Right: Form */}
-            <BookingForm />
+            <BookingForm loggedInUser={loggedInUser} />
           </div>
         </section>
       </main>

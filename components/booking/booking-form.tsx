@@ -5,7 +5,7 @@ import { CalendarPicker } from './calendar-picker'
 import { TimePicker } from './time-picker'
 import { CustomSelect } from './custom-select'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { CheckCircle, Loader2, ChevronRight, ChevronLeft } from 'lucide-react'
 
@@ -19,6 +19,12 @@ interface BookingData {
   location: string
   budget: string
   specialRequests: string
+}
+
+interface LoggedInUser {
+  name: string
+  email: string
+  phone: string
 }
 
 const SERVICES = [
@@ -60,8 +66,10 @@ const slideVariants = {
   }),
 }
 
-export function BookingForm() {
-  const [step, setStep] = useState(1)
+export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | null }) {
+  // When a user is already signed in, skip step 1 (their details are autofilled)
+  const startStep = loggedInUser ? 2 : 1
+  const [step, setStep] = useState(startStep)
   const [direction, setDirection] = useState(1)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -78,6 +86,15 @@ export function BookingForm() {
     trigger,
     reset,
   } = useForm<BookingData>({ mode: 'onTouched' })
+
+  // Autofill step-1 fields from the logged-in user's profile
+  useEffect(() => {
+    if (loggedInUser) {
+      setValue('clientName', loggedInUser.name)
+      setValue('clientEmail', loggedInUser.email)
+      setValue('clientPhone', loggedInUser.phone ?? '')
+    }
+  }, [loggedInUser, setValue])
 
   const selectedDate = watch('eventDate')
   const selectedTime = watch('eventTime')
@@ -101,7 +118,8 @@ export function BookingForm() {
 
   function goPrev() {
     setDirection(-1)
-    setStep((s) => s - 1)
+    // If logged in, never go back below step 2 (step 1 is autofilled)
+    setStep((s) => (loggedInUser && s <= 2 ? 2 : s - 1))
   }
 
   const onSubmit = async (data: BookingData) => {
@@ -174,7 +192,9 @@ export function BookingForm() {
         {STEPS.map((s, i) => {
           const num = i + 1
           const isActive = step === num
-          const isDone = step > num
+          // Step 1 is "done" if user is logged in (autofilled) or if we've passed it
+          const isDone = step > num || (num === 1 && !!loggedInUser)
+          const isAutofilled = num === 1 && !!loggedInUser
           return (
             <div key={s.number} className="flex items-center flex-1 last:flex-none">
               <div className="flex flex-col items-center gap-1.5">
@@ -198,13 +218,13 @@ export function BookingForm() {
                     isActive ? 'text-foreground' : isDone ? 'text-accent' : 'text-muted-foreground/40'
                   }`}
                 >
-                  {s.label}
+                  {isAutofilled ? 'Autofilled' : s.label}
                 </span>
               </div>
               {i < STEPS.length - 1 && (
                 <div
                   className={`flex-1 h-px mx-3 mb-5 transition-colors duration-500 ${
-                    step > num ? 'bg-accent/50' : 'bg-border'
+                    isDone && step > num ? 'bg-accent/50' : isDone ? 'bg-accent/30' : 'bg-border'
                   }`}
                 />
               )}
@@ -453,8 +473,9 @@ export function BookingForm() {
         </div>
 
         {/* ── Navigation buttons ───────────────────────────────────────── */}
-        <div className={`flex items-center mt-10 ${step > 1 ? 'justify-between' : 'justify-end'}`}>
-          {step > 1 && (
+        {/* When logged in, step 2 is the first visible step so no Previous needed */}
+        <div className={`flex items-center mt-10 ${(step > 1 && !(loggedInUser && step === 2)) ? 'justify-between' : 'justify-end'}`}>
+          {step > 1 && !(loggedInUser && step === 2) && (
             <button
               type="button"
               onClick={goPrev}

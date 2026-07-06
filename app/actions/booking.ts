@@ -2,23 +2,16 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { booking, message } from '@/lib/db/schema'
-import { and, desc, eq, or } from 'drizzle-orm'
+import { booking } from '@/lib/db/schema'
+import { desc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── Booking now requires authentication ────────────────────────────────────
+// createBooking uses getRequiredUserId() to enforce sign-in before booking.
 
-async function getOptionalUserId(): Promise<string | null> {
-  try {
-    const headersList = await headers()
-    const session = await auth.api.getSession({ headers: headersList })
-    return session?.user?.id ?? null
-  } catch {
-    return null
-  }
-}
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 async function getRequiredUserId(): Promise<string> {
   const headersList = await headers()
@@ -43,7 +36,7 @@ function assertNonEmpty(v: string | undefined, field: string): string {
   return s
 }
 
-// ── Booking submission (public — no auth required) ─────────────────────────
+// ── Booking submission (auth required) ────────────────────────────────────
 
 export interface BookingInput {
   clientName: string
@@ -76,7 +69,8 @@ export async function createBooking(input: BookingInput) {
   // Whitelist service values to prevent garbage data
   if (!VALID_SERVICES.has(service)) throw new Error('Invalid service selection')
 
-  const userId = await getOptionalUserId()
+  // Enforce: only signed-in users may create bookings
+  const userId = await getRequiredUserId()
   const id = randomUUID()
 
   await db.insert(booking).values({
@@ -340,47 +334,4 @@ export async function getMyBookings() {
     .orderBy(desc(booking.createdAt))
 }
 
-export async function getBookingMessages(bookingId: string) {
-  const userId = await getRequiredUserId()
-  // Verify this booking belongs to the user
-  const [b] = await db.select().from(booking).where(and(eq(booking.id, bookingId), eq(booking.userId, userId)))
-  if (!b) throw new Error('Not found')
-  return db.select().from(message).where(eq(message.bookingId, bookingId))
-}
 
-export async function sendClientMessage(bookingId: string, content: string) {
-  const headersList = await headers()
-  const session = await auth.api.getSession({ headers: headersList })
-  if (!session?.user) throw new Error('Unauthorized')
-
-  // Validate inputs
-  if (!bookingId || typeof bookingId !== 'string') throw new Error('Invalid booking')
-  const safeContent = content?.trim().slice(0, 2000)
-  if (!safeContent) throw new Error('Message cannot be empty')
-
-  // Verify ownership: booking must match this user by userId OR email.
-  // This covers bookings created while logged in AND bookings matched by email (pre-signup).
-  const [b] = await db
-    .select({ id: booking.id })
-    .from(booking)
-    .where(
-      and(
-        eq(booking.id, bookingId),
-        or(
-          eq(booking.userId, session.user.id),
-          eq(booking.clientEmail, session.user.email.toLowerCase()),
-        ),
-      ),
-    )
-    .limit(1)
-  if (!b) throw new Error('Not found or access denied')
-
-  await db.insert(message).values({
-    id: randomUUID(),
-    bookingId,
-    senderId: session.user.id,
-    senderRole: 'client',
-    content: safeContent,
-  })
-  revalidatePath('/portal')
-}
