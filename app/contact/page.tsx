@@ -1,5 +1,6 @@
 import { Footer } from '@/components/footer'
 import { Navigation } from '@/components/navigation'
+import { StudioMap } from '@/components/studio-map'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -75,20 +76,8 @@ export default function ContactPage() {
               </address>
             </div>
 
-            {/* Embedded map */}
-            <div className="aspect-video lg:aspect-auto lg:min-h-[300px] bg-muted overflow-hidden">
-              <iframe
-                src="https://maps.google.com/maps?q=Taramandal,Gorakhpur,Uttar+Pradesh,India&output=embed&z=13"
-                width="100%"
-                height="100%"
-                style={{ border: 0, minHeight: 300 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Studio AYNSH location — Gorakhpur, UP"
-                aria-label="Map showing Studio AYNSH location in Gorakhpur"
-              />
-            </div>
+            {/* Map showing studio location */}
+            <StudioMap />
           </div>
         </section>
       </main>

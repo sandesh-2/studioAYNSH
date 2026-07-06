@@ -44,6 +44,11 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
   const sortRef   = useRef<HTMLDivElement>(null)
   const filterRef = useRef<HTMLDivElement>(null)
 
+  // Close detail panel when filters change
+  useEffect(() => {
+    setActiveBooking(null)
+  }, [serviceFilter, sortMode, dateFrom, dateTo])
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (sortRef.current   && !sortRef.current.contains(e.target as Node))   setShowSortMenu(false)
