@@ -14,6 +14,7 @@ interface BookingData {
   clientEmail: string
   clientPhone: string
   service: string
+  customService?: string
   eventDate: string
   eventTime: string
   state: string
@@ -200,7 +201,7 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
   const labelClass =
     'block font-sans text-xs font-medium tracking-[0.15em] uppercase text-foreground mb-2'
 
-  // ── Success state ─────────────────────────────────────────────────────────
+  // ── Success state ───────────────────────────────���─────────────────────────
   if (submitted) {
     return (
       <motion.div
@@ -389,6 +390,34 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
                     <p className="mt-1.5 font-sans text-xs text-destructive">Please select a service</p>
                   )}
                 </div>
+
+                {/* Custom service requirements — shown when "Other" is selected */}
+                {selectedService === 'other' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <label htmlFor="customService" className={labelClass}>
+                      Tell us about your project
+                    </label>
+                    <textarea
+                      id="customService"
+                      placeholder="Please describe what kind of photography/videography service you need and what the project entails..."
+                      {...register('customService', {
+                        validate: {
+                          required: (v) => selectedService === 'other' && !v ? 'Please describe your project' : true,
+                          minLength: (v) => !v || v.length >= 10 ? true : 'Please provide at least 10 characters',
+                        },
+                      })}
+                      className={`${inputClass} min-h-[120px] resize-none font-sans`}
+                    />
+                    {errors.customService && (
+                      <p className="mt-1.5 font-sans text-xs text-destructive">{errors.customService.message}</p>
+                    )}
+                  </motion.div>
+                )}
 
                 {/* Preferred date — CalendarPicker has its own trigger */}
                 <div>

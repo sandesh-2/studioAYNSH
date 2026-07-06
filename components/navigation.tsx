@@ -5,14 +5,19 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-const navLinks = [
+const leftNavLinks = [
   { label: 'Portfolio', href: '/portfolio' },
   { label: 'Services', href: '/services' },
   { label: 'Journal', href: '/blog' },
+]
+
+const rightNavLinks = [
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
   { label: 'Portal', href: '/portal' },
 ]
+
+const allNavLinks = [...leftNavLinks, ...rightNavLinks]
 
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
@@ -47,19 +52,9 @@ export function Navigation() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex flex-col leading-none group">
-            <span className="font-serif text-xl font-light tracking-[0.15em] text-foreground uppercase">
-              studio
-            </span>
-            <span className="font-serif text-2xl font-semibold tracking-[0.2em] text-foreground uppercase -mt-1">
-              AYNSH
-            </span>
-          </Link>
-
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-10" aria-label="Main navigation">
-            {navLinks.map((link) => (
+          {/* Left nav */}
+          <nav className="hidden md:flex items-center gap-10" aria-label="Left navigation">
+            {leftNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -67,7 +62,7 @@ export function Navigation() {
                   pathname === link.href
                     ? 'text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
-                }`}
+                } drop-shadow-sm md:drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]`}
               >
                 {link.label}
                 <span
@@ -79,8 +74,38 @@ export function Navigation() {
             ))}
           </nav>
 
-          {/* CTA + hamburger */}
-          <div className="flex items-center gap-6">
+          {/* Center logo */}
+          <Link href="/" className="flex flex-col leading-none group absolute left-1/2 transform -translate-x-1/2">
+            <span className="font-serif text-xl font-light tracking-[0.15em] text-foreground uppercase drop-shadow-sm md:drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+              studio
+            </span>
+            <span className="font-serif text-2xl font-semibold tracking-[0.2em] text-foreground uppercase -mt-1 drop-shadow-sm md:drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+              AYNSH
+            </span>
+          </Link>
+
+          {/* Right nav + CTA + hamburger */}
+          <div className="flex items-center gap-6 ml-auto">
+            <nav className="hidden md:flex items-center gap-10" aria-label="Right navigation">
+              {rightNavLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`text-sm font-sans font-medium tracking-[0.12em] uppercase transition-colors duration-200 relative group ${
+                    pathname === link.href
+                      ? 'text-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  } drop-shadow-sm md:drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]`}
+                >
+                  {link.label}
+                  <span
+                    className={`absolute -bottom-0.5 left-0 h-px bg-accent transition-all duration-300 ${
+                      pathname === link.href ? 'w-full' : 'w-0 group-hover:w-full'
+                    }`}
+                  />
+                </Link>
+              ))}
+            </nav>
             <Link
               href="/booking"
               className="hidden md:inline-flex items-center justify-center px-6 py-2.5 text-xs font-sans font-medium tracking-[0.15em] uppercase border border-foreground text-foreground hover:bg-foreground hover:text-background transition-all duration-300"
@@ -94,17 +119,17 @@ export function Navigation() {
               aria-expanded={menuOpen}
             >
               <span
-                className={`block w-6 h-px bg-foreground transition-all duration-300 origin-center ${
+                className={`block w-6 h-px bg-foreground drop-shadow-sm transition-all duration-300 origin-center ${
                   menuOpen ? 'rotate-45 translate-y-[7px]' : ''
                 }`}
               />
               <span
-                className={`block w-6 h-px bg-foreground transition-all duration-300 ${
+                className={`block w-6 h-px bg-foreground drop-shadow-sm transition-all duration-300 ${
                   menuOpen ? 'opacity-0' : ''
                 }`}
               />
               <span
-                className={`block w-6 h-px bg-foreground transition-all duration-300 origin-center ${
+                className={`block w-6 h-px bg-foreground drop-shadow-sm transition-all duration-300 origin-center ${
                   menuOpen ? '-rotate-45 -translate-y-[7px]' : ''
                 }`}
               />
@@ -124,7 +149,7 @@ export function Navigation() {
             className="fixed inset-0 z-40 bg-background flex flex-col justify-center px-8"
           >
             <nav className="flex flex-col gap-8" aria-label="Mobile navigation">
-              {navLinks.map((link, i) => (
+              {allNavLinks.map((link, i) => (
                 <motion.div
                   key={link.href}
                   initial={{ opacity: 0, x: -20 }}
