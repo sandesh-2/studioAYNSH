@@ -213,8 +213,8 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <header className="border-b border-border bg-background sticky top-0 z-40">
+      {/* Top bar - positioned below Navigation (h-20) */}
+      <header className="border-b border-border bg-background sticky top-20 z-30">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <Link href="/" className="font-serif text-base text-foreground tracking-widest">STUDIO AYNSH</Link>
