@@ -6,10 +6,12 @@ import {
   bookingV2,
   bookingEvent,
   bookingFinancials,
+  bookingNote,
   bookingActivityLog,
   SERVICE_LABELS,
+  type FullBooking,
 } from '@/lib/db/schema'
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, inArray } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
@@ -147,9 +149,10 @@ export async function createBooking(input: BookingInput) {
 }
 
 // ── getMyBookings ──────────────────────────────────────────────────────────
-// Returns the logged-in client's bookings, joined with event and financials.
+// Returns the logged-in client's bookings joined with event, financials, and
+// notes. Uses inArray for a single round-trip per related table.
 
-export async function getMyBookings() {
+export async function getMyBookings(): Promise<FullBooking[]> {
   const userId = await getRequiredUserId()
 
   const bookings = await db
@@ -160,59 +163,30 @@ export async function getMyBookings() {
 
   if (bookings.length === 0) return []
 
-  // Fetch related event rows
-  const events = await db
-    .select()
-    .from(bookingEvent)
-    .where(eq(bookingEvent.bookingId, bookings[0].id))
+  const ids = bookings.map((b) => b.id)
 
-  // Build a map for O(1) lookups — then re-fetch for all bookings
-  const allBookingIds = bookings.map((b) => b.id)
-
-  const [allEvents, allFinancials] = await Promise.all([
-    db.select().from(bookingEvent).where(
-      // Use a sub-select via inArray equivalent: one query per booking set
-      // For simplicity with drizzle-orm, we do separate fetches per booking
-      // and merge. In practice client rarely has >20 bookings.
-      allBookingIds.length === 1
-        ? eq(bookingEvent.bookingId, allBookingIds[0])
-        : eq(bookingEvent.bookingId, allBookingIds[0])  // handled below
-    ),
-    db.select().from(bookingFinancials).where(
-      eq(bookingFinancials.bookingId, allBookingIds[0])
-    ),
+  const [events, financials, notes] = await Promise.all([
+    db.select().from(bookingEvent).where(inArray(bookingEvent.bookingId, ids)),
+    db.select().from(bookingFinancials).where(inArray(bookingFinancials.bookingId, ids)),
+    db.select().from(bookingNote).where(inArray(bookingNote.bookingId, ids))
+      .orderBy(desc(bookingNote.createdAt)),
   ])
 
-  // For clients with multiple bookings, fetch all at once using Promise.all
-  const [eventsMap, financialsMap] = await buildRelationMaps(allBookingIds)
+  const eventsMap     = new Map(events.map((e) => [e.bookingId, e]))
+  const financialsMap = new Map(financials.map((f) => [f.bookingId, f]))
+  const notesMap      = new Map<string, typeof notes>()
+  for (const n of notes) {
+    const arr = notesMap.get(n.bookingId) ?? []
+    arr.push(n)
+    notesMap.set(n.bookingId, arr)
+  }
 
   return bookings.map((b) => ({
     ...b,
     event:      eventsMap.get(b.id) ?? null,
     financials: financialsMap.get(b.id) ?? null,
+    notes:      notesMap.get(b.id) ?? [],
   }))
-}
-
-async function buildRelationMaps(bookingIds: string[]) {
-  if (bookingIds.length === 0) return [new Map(), new Map()] as const
-
-  // Drizzle doesn't have inArray with array param in all versions, so we
-  // fetch individually and batch with Promise.all for correctness.
-  const [eventRows, financialRows] = await Promise.all([
-    Promise.all(bookingIds.map((id) =>
-      db.select().from(bookingEvent).where(eq(bookingEvent.bookingId, id)).limit(1)
-        .then((r) => r[0] ?? null)
-    )),
-    Promise.all(bookingIds.map((id) =>
-      db.select().from(bookingFinancials).where(eq(bookingFinancials.bookingId, id)).limit(1)
-        .then((r) => r[0] ?? null)
-    )),
-  ])
-
-  const eventsMap     = new Map(bookingIds.map((id, i) => [id, eventRows[i]]))
-  const financialsMap = new Map(bookingIds.map((id, i) => [id, financialRows[i]]))
-
-  return [eventsMap, financialsMap] as const
 }
 
 // ── Email helpers ──────────────────────────────────────────────────────────

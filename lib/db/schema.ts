@@ -9,8 +9,7 @@ import {
   timestamp,
 } from 'drizzle-orm/pg-core'
 
-// Drizzle's `timestamp` maps to TIMESTAMPTZ when `withTimezone: true`.
-// Use this helper everywhere instead of the non-existent `timestamptz` export.
+// Drizzle does not export `timestamptz` — use `timestamp` with { withTimezone: true }.
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' })
 
 // ── Better Auth required tables ─────────────────────────────────────────────
