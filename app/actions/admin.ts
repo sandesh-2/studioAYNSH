@@ -16,7 +16,15 @@ import {
 import { desc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { randomUUID } from 'crypto'
+
+// UUID v4 generator that works in Edge runtime
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
 
 // ── Auth guard ─────────────────────────────────────────────────────────────
 // Role is always re-checked from the DB — never trusted from the session token
@@ -132,7 +140,7 @@ export async function updateBookingStatus(
 
   // Audit log
   await db.insert(bookingActivityLog).values({
-    id:            randomUUID(),
+    id:            uuidv4(),
     bookingId,
     actorId:       admin.id,
     actorRole:     'admin',
@@ -168,7 +176,7 @@ export async function updateBookingProgress(bookingId: string, progressStage: Pr
     .where(eq(bookingV2.id, bookingId))
 
   await db.insert(bookingActivityLog).values({
-    id:            randomUUID(),
+    id:            uuidv4(),
     bookingId,
     actorId:       admin.id,
     actorRole:     'admin',
@@ -189,7 +197,7 @@ export async function addBookingNote(bookingId: string, content: string) {
   if (!safeContent) throw new Error('Note cannot be empty')
   const admin = await requireAdmin()
 
-  const noteId = randomUUID()
+  const noteId = uuidv4()
 
   await db.insert(bookingNote).values({
     id:        noteId,
@@ -199,7 +207,7 @@ export async function addBookingNote(bookingId: string, content: string) {
   })
 
   await db.insert(bookingActivityLog).values({
-    id:        randomUUID(),
+    id:        uuidv4(),
     bookingId,
     actorId:   admin.id,
     actorRole: 'admin',
@@ -257,7 +265,7 @@ export async function updateBookingFinancials(
       .where(eq(bookingFinancials.bookingId, bookingId))
   } else {
     await db.insert(bookingFinancials).values({
-      id:            randomUUID(),
+      id:            uuidv4(),
       bookingId,
       totalAmount:   safeTotal,
       depositAmount: safeDeposit,
@@ -268,7 +276,7 @@ export async function updateBookingFinancials(
   }
 
   await db.insert(bookingActivityLog).values({
-    id:        randomUUID(),
+    id:        uuidv4(),
     bookingId,
     actorId:   admin.id,
     actorRole: 'admin',

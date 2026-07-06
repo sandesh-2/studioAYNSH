@@ -7,6 +7,8 @@ const globalForDb = globalThis as unknown as {
   pool: Pool | undefined
 }
 
+const isProduction = process.env.NODE_ENV === 'production'
+
 export const pool =
   globalForDb.pool ??
   new Pool({
@@ -14,6 +16,7 @@ export const pool =
     max: 10,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
+    ssl: isProduction ? { rejectUnauthorized: true } : false,
   })
 
 if (process.env.NODE_ENV !== 'production') globalForDb.pool = pool

@@ -14,7 +14,15 @@ import {
 import { desc, eq, inArray } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { randomUUID } from 'crypto'
+
+// UUID v4 generator that works in Edge runtime
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
 
 // ── Auth helper ────────────────────────────────────────────────────────────
 
@@ -63,89 +71,98 @@ export interface BookingInput {
 // booking_financials (stub), and booking_activity_log atomically.
 
 export async function createBooking(input: BookingInput) {
-  const clientName  = assertNonEmpty(input.clientName,  'Name').slice(0, 120)
-  const clientEmail = assertNonEmpty(input.clientEmail, 'Email').toLowerCase().slice(0, 254)
-  const clientPhone = assertNonEmpty(input.clientPhone, 'Phone').slice(0, 20)
-  const location    = assertNonEmpty(input.location,    'Location').slice(0, 200)
-  const service     = assertNonEmpty(input.service,     'Service')
-  const eventDate   = assertNonEmpty(input.eventDate,   'Event date')
+  try {
+    const clientName  = assertNonEmpty(input.clientName,  'Name').slice(0, 120)
+    const clientEmail = assertNonEmpty(input.clientEmail, 'Email').toLowerCase().slice(0, 254)
+    const clientPhone = assertNonEmpty(input.clientPhone, 'Phone').slice(0, 20)
+    const location    = assertNonEmpty(input.location,    'Location').slice(0, 200)
+    const service     = assertNonEmpty(input.service,     'Service')
+    const eventDate   = assertNonEmpty(input.eventDate,   'Event date')
 
-  if (!/^\S+@\S+\.\S+$/.test(clientEmail)) throw new Error('Invalid email address')
-  if (!VALID_SERVICES.has(service))        throw new Error('Invalid service selection')
+    if (!/^\S+@\S+\.\S+$/.test(clientEmail)) throw new Error('Invalid email address')
+    if (!VALID_SERVICES.has(service))        throw new Error('Invalid service selection')
 
-  // Validate date format (YYYY-MM-DD)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) throw new Error('Invalid date format')
+    // Validate date format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) throw new Error('Invalid date format')
 
-  const userId = await getRequiredUserId()
+    const userId = await getRequiredUserId()
 
-  const bookingId  = randomUUID()
-  const eventId    = randomUUID()
-  const financialId = randomUUID()
-  const logId      = randomUUID()
+    const bookingId  = uuidv4()
+    const eventId    = uuidv4()
+    const financialId = uuidv4()
+    const logId      = uuidv4()
 
-  // ── Insert core booking ────────────────────────────────────────────────
-  await db.insert(bookingV2).values({
-    id:            bookingId,
-    userId,
-    clientName,
-    clientEmail,
-    clientPhone,
-    service,
-    status:        'pending',
-    progressStage: 'enquiry_received',
-  })
+    // ── Insert core booking ────────────────────────────────────────────────
+    await db.insert(bookingV2).values({
+      id:            bookingId,
+      userId,
+      clientName,
+      clientEmail,
+      clientPhone,
+      service,
+      status:        'pending',
+      progressStage: 'enquiry_received',
+    })
 
-  // ── Insert event details ───────────────────────────────────────────────
-  await db.insert(bookingEvent).values({
-    id:              eventId,
-    bookingId:       bookingId,
-    eventDate:       eventDate,   // DATE column accepts YYYY-MM-DD string
-    eventTime:       sanitize(input.eventTime, 20),
-    location,
-    venue:           null,
-    duration:        sanitize(input.duration, 40),
-    guestCount:      null,
-    shootTheme:      sanitize(input.shootTheme, 120),
-    specialRequests: sanitize(input.specialRequests, 2000),
-    howHeard:        sanitize(input.howHeard, 40),
-  })
+    // ── Insert event details ───────────────────────────────────────────────
+    await db.insert(bookingEvent).values({
+      id:              eventId,
+      bookingId:       bookingId,
+      eventDate:       eventDate,   // DATE column accepts YYYY-MM-DD string
+      eventTime:       sanitize(input.eventTime, 20),
+      location,
+      venue:           null,
+      duration:        sanitize(input.duration, 40),
+      guestCount:      null,
+      shootTheme:      sanitize(input.shootTheme, 120),
+      specialRequests: sanitize(input.specialRequests, 2000),
+      howHeard:        sanitize(input.howHeard, 40),
+    })
 
-  // ── Insert financials stub ────────────────────────────────────────────
-  // The budget field from the booking form is informational; real amounts
-  // are set by the admin after quoting. We store the client's budget hint
-  // in paymentNotes until the admin sets proper amounts.
-  await db.insert(bookingFinancials).values({
-    id:           financialId,
-    bookingId:    bookingId,
-    paymentNotes: sanitize(input.budget, 40),
-  })
+    // ── Insert financials stub ────────────────────────────────────────────
+    // The budget field from the booking form is informational; real amounts
+    // are set by the admin after quoting. We store the client's budget hint
+    // in paymentNotes until the admin sets proper amounts.
+    await db.insert(bookingFinancials).values({
+      id:           financialId,
+      bookingId:    bookingId,
+      paymentNotes: sanitize(input.budget, 40),
+    })
 
-  // ── Seed activity log ─────────────────────────────────────────────────
-  await db.insert(bookingActivityLog).values({
-    id:        logId,
-    bookingId: bookingId,
-    actorId:   userId,
-    actorRole: 'system',
-    eventType: 'booking_created',
-    newValue:  service,
-    metadata:  { clientEmail, eventDate },
-  })
+    // ── Seed activity log ─────────────────────────────────────────────────
+    await db.insert(bookingActivityLog).values({
+      id:        logId,
+      bookingId: bookingId,
+      actorId:   userId,
+      actorRole: 'system',
+      eventType: 'booking_created',
+      newValue:  service,
+      metadata:  { clientEmail, eventDate },
+    })
 
-  // ── Email notifications ───────────────────────────────────────────────
-  await Promise.all([
-    // sendConfirmationEmail({ ...input, clientName, clientEmail }, bookingId),
-    sendStudioOwnerNotification({ bookingId, clientName, clientEmail, clientPhone, service, eventDate,
-      eventTime: input.eventTime ?? null, location,
-      duration: input.duration ?? null, budget: input.budget ?? null,
-      guestCount: input.guestCount ?? null, shootTheme: input.shootTheme ?? null,
-      specialRequests: input.specialRequests ?? null, howHeard: input.howHeard ?? null,
-    }),
-  ])
+    // ── Email notifications ───────────────────────────────────────────────
+    // Do not fail the booking if emails fail; they're asynchronous notifications
+    Promise.all([
+      // sendConfirmationEmail({ ...input, clientName, clientEmail }, bookingId),
+      sendStudioOwnerNotification({ bookingId, clientName, clientEmail, clientPhone, service, eventDate,
+        eventTime: input.eventTime ?? null, location,
+        duration: input.duration ?? null, budget: input.budget ?? null,
+        guestCount: input.guestCount ?? null, shootTheme: input.shootTheme ?? null,
+        specialRequests: input.specialRequests ?? null, howHeard: input.howHeard ?? null,
+      }),
+    ]).catch((err) => {
+      console.error('[v0] Email notification failed (non-blocking):', err)
+    })
 
-  revalidatePath('/portal')
-  revalidatePath('/admin')
+    revalidatePath('/portal')
+    revalidatePath('/admin')
 
-  return { success: true, bookingId }
+    return { success: true, bookingId }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to create booking'
+    console.error('[v0] createBooking error:', message)
+    return { success: false, error: message }
+  }
 }
 
 // ── getMyBookings ──────────────────────────────────────────────────────────

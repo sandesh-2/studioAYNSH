@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { user, bookingV2, bookingEvent, bookingFinancials, bookingNote } from '@/lib/db/schema'
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, inArray } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Navigation } from '@/components/navigation'
@@ -39,10 +39,13 @@ export default async function PortalPage() {
   let fullBookings: FullBooking[] = []
 
   if (coreBookings.length > 0) {
+    const ids = coreBookings.map((b) => b.id)
+
     const [events, financials, notes] = await Promise.all([
-      db.select().from(bookingEvent),
-      db.select().from(bookingFinancials),
-      db.select().from(bookingNote).orderBy(desc(bookingNote.createdAt)),
+      db.select().from(bookingEvent).where(inArray(bookingEvent.bookingId, ids)),
+      db.select().from(bookingFinancials).where(inArray(bookingFinancials.bookingId, ids)),
+      db.select().from(bookingNote).where(inArray(bookingNote.bookingId, ids))
+        .orderBy(desc(bookingNote.createdAt)),
     ])
 
     const eventsMap     = new Map(events.map((e) => [e.bookingId, e]))
