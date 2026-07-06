@@ -278,30 +278,41 @@ export function Navigation() {
               </Link>
             )}
 
-            {/* Hamburger menu - refined styling */}
+            {/* Hamburger menu - elegant icon design */}
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="p-2.5 hover:opacity-70 transition-opacity ml-1"
+              className="p-2 hover:opacity-60 transition-opacity ml-1 flex items-center justify-center"
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
             >
-              <span className="flex flex-col gap-1.5">
-                <span
-                  className={`block w-5 h-px bg-foreground transition-all duration-300 origin-center ${
-                    menuOpen ? 'rotate-45 translate-y-[6px]' : ''
-                  }`}
-                />
-                <span
-                  className={`block w-5 h-px bg-foreground transition-all duration-300 ${
-                    menuOpen ? 'opacity-0' : ''
-                  }`}
-                />
-                <span
-                  className={`block w-5 h-px bg-foreground transition-all duration-300 origin-center ${
-                    menuOpen ? '-rotate-45 -translate-y-[6px]' : ''
-                  }`}
-                />
-              </span>
+              {menuOpen ? (
+                /* Elegant X icon when open */
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="transition-all duration-300">
+                  <path
+                    d="M3 3L17 17"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-foreground"
+                  />
+                  <path
+                    d="M17 3L3 17"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-foreground"
+                  />
+                </svg>
+              ) : (
+                /* Hamburger menu lines when closed */
+                <span className="flex flex-col gap-1.5">
+                  <span className="block w-5 h-px bg-foreground transition-all duration-300" />
+                  <span className="block w-5 h-px bg-foreground transition-all duration-300" />
+                  <span className="block w-5 h-px bg-foreground transition-all duration-300" />
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -315,9 +326,9 @@ export function Navigation() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="fixed inset-0 z-40 lg:hidden bg-background/99 backdrop-blur-lg flex flex-col justify-center px-6 pb-20 pt-32"
+            className="fixed inset-0 z-40 lg:hidden bg-background/99 backdrop-blur-lg flex flex-col justify-center px-6 pb-32 pt-32"
           >
-            <nav className="flex flex-col gap-10" aria-label="Mobile navigation">
+            <nav className="flex flex-col gap-6" aria-label="Mobile navigation">
               {/* Main navigation links */}
               {allNavLinks.map((link, i) => (
                 <motion.div
@@ -395,12 +406,12 @@ export function Navigation() {
               )}
             </nav>
 
-            {/* Footer contact info */}
-            <div className="absolute bottom-12 left-6 right-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <p className="text-xs sm:text-sm font-sans text-muted-foreground tracking-wide">
+            {/* Footer contact info - positioned below menu with proper spacing */}
+            <div className="mt-auto pt-12 border-t border-border/20 flex flex-col items-center justify-center gap-3">
+              <p className="text-xs font-sans text-muted-foreground/70 tracking-wider">
                 +91 7084019414
               </p>
-              <p className="text-xs sm:text-sm font-sans text-muted-foreground tracking-wide break-all">
+              <p className="text-xs font-sans text-muted-foreground/70 tracking-wider break-all text-center">
                 samratgupta7754@gmail.com
               </p>
             </div>
