@@ -215,7 +215,7 @@ async function sendStudioOwnerNotification(bookingDetails: {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return // Skip if Resend key not configured
 
-  const studioEmail = 'samratgupta7754@gmail.com' // Studio owner email — update this
+  const studioEmail = 'sandeshkg254@gmail.com' // Studio owner email — update this
 
   const serviceLabels: Record<string, string> = {
     wedding: 'Wedding Photography',
