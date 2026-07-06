@@ -80,6 +80,9 @@
   --champagne: oklch(0.85 0.055 70);
   --espresso: oklch(0.22 0.014 45);
   --cream: oklch(0.975 0.008 75);
+  /* Accent gradients for nav underlines */
+  --accent-gradient-from: oklch(0.72 0.08 65);
+  --accent-gradient-to: oklch(0.85 0.055 70);
   --radius: 0.25rem;
   --sidebar: oklch(0.97 0.008 75);
   --sidebar-foreground: oklch(0.18 0.012 45);
