@@ -2,8 +2,11 @@
 
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, LogOut, User } from 'lucide-react'
+import { useSession } from '@/lib/auth-client'
+import { signOut } from '@/lib/auth-client'
 
 const leftNavLinks = [
   { label: 'Portfolio', href: '/portfolio' },
@@ -14,7 +17,6 @@ const leftNavLinks = [
 const rightNavLinks = [
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
-  { label: 'Portal', href: '/portal' },
 ]
 
 const allNavLinks = [...leftNavLinks, ...rightNavLinks]
@@ -22,7 +24,13 @@ const allNavLinks = [...leftNavLinks, ...rightNavLinks]
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { data: session } = useSession()
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const userRole = (session?.user as any)?.role || null
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60)
@@ -38,6 +46,28 @@ export function Navigation() {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleSignOut = async () => {
+    await signOut()
+    setDropdownOpen(false)
+    router.push('/')
+    router.refresh()
+  }
+
+  const getPortalLink = () => {
+    if (userRole === 'admin') return '/admin'
+    return '/portal'
+  }
 
   return (
     <>
@@ -105,6 +135,63 @@ export function Navigation() {
                   />
                 </Link>
               ))}
+
+              {/* Auth State: Portal/My Account */}
+              {session ? (
+                <div ref={dropdownRef} className="relative">
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-2 text-sm font-sans font-medium tracking-[0.12em] uppercase transition-colors duration-200 text-muted-foreground hover:text-foreground drop-shadow-sm md:drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
+                  >
+                    My Account
+                    <ChevronDown size={14} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {dropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full right-0 mt-2 w-48 border border-border bg-background shadow-sm z-50"
+                      >
+                        <Link
+                          href={getPortalLink()}
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 w-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                        >
+                          <User size={14} />
+                          My Profile
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center gap-3 w-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border-t border-border text-left"
+                        >
+                          <LogOut size={14} />
+                          Sign Out
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <Link
+                  href="/portal"
+                  className={`text-sm font-sans font-medium tracking-[0.12em] uppercase transition-colors duration-200 relative group ${
+                    pathname === '/portal'
+                      ? 'text-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  } drop-shadow-sm md:drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]`}
+                >
+                  Portal
+                  <span
+                    className={`absolute -bottom-0.5 left-0 h-px bg-accent transition-all duration-300 ${
+                      pathname === '/portal' ? 'w-full' : 'w-0 group-hover:w-full'
+                    }`}
+                  />
+                </Link>
+              )}
             </nav>
             <Link
               href="/booking"
