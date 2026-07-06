@@ -9,9 +9,10 @@ import { useState } from 'react'
 
 interface AuthFormProps {
   mode: 'sign-in' | 'sign-up'
+  redirectTo?: string
 }
 
-export function AuthForm({ mode }: AuthFormProps) {
+export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -27,12 +28,20 @@ export function AuthForm({ mode }: AuthFormProps) {
     setLoading(true)
 
     try {
+      // Client-side validation before hitting the server
+      if (mode === 'sign-up' && password.length < 8) {
+        throw new Error('Password must be at least 8 characters.')
+      }
+      if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+        throw new Error('Please enter a valid email address.')
+      }
+
       if (mode === 'sign-up') {
         const res = await authClient.signUp.email({
           name: name.trim().slice(0, 120),
           email: email.trim().toLowerCase(),
           password,
-          callbackURL: '/portal',
+          callbackURL: redirectTo,
           ...(phone.trim() && { phone: phone.trim().slice(0, 20) }),
         } as Parameters<typeof authClient.signUp.email>[0])
         if (res.error) throw new Error(res.error.message)
@@ -40,11 +49,11 @@ export function AuthForm({ mode }: AuthFormProps) {
         const res = await authClient.signIn.email({
           email,
           password,
-          callbackURL: '/portal',
+          callbackURL: redirectTo,
         })
         if (res.error) throw new Error(res.error.message)
       }
-      router.push('/portal')
+      router.push(redirectTo)
       router.refresh()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')

@@ -22,7 +22,7 @@ export default async function BookingPage() {
 
   // Require sign-in — redirect guests to sign-in with a return URL
   if (!session?.user) {
-    redirect('/auth/signin?redirect=/booking')
+    redirect('/sign-in?redirect=/booking')
   }
 
   // Fetch fresh user data (name, email, phone) for autofill
