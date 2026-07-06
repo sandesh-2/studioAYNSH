@@ -2,11 +2,10 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { booking, message, user } from '@/lib/db/schema'
+import { booking, user, PROGRESS_STAGES, type ProgressStageKey } from '@/lib/db/schema'
 import { desc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { randomUUID } from 'crypto'
 
 /**
  * Read the user's role directly from the DB — not from the session object.
@@ -95,23 +94,16 @@ export async function updateBookingAmount(
   revalidatePath('/admin')
 }
 
-export async function sendAdminMessage(bookingId: string, content: string) {
+const VALID_PROGRESS_STAGES = new Set(PROGRESS_STAGES.map((s) => s.key))
+
+export async function updateBookingProgress(bookingId: string, progressStage: ProgressStageKey) {
   if (!bookingId || typeof bookingId !== 'string') throw new Error('Invalid booking ID')
-  const safeContent = content?.trim().slice(0, 2000)
-  if (!safeContent) throw new Error('Message cannot be empty')
-  const admin = await requireAdmin()
-  await db.insert(message).values({
-    id: randomUUID(),
-    bookingId,
-    senderId: admin.id,
-    senderRole: 'admin',
-    content: safeContent,
-  })
+  if (!VALID_PROGRESS_STAGES.has(progressStage)) throw new Error('Invalid progress stage')
+  await requireAdmin()
+  await db
+    .update(booking)
+    .set({ progressStage, updatedAt: new Date() })
+    .where(eq(booking.id, bookingId))
   revalidatePath('/admin')
   revalidatePath('/portal')
-}
-
-export async function getBookingMessages(bookingId: string) {
-  await requireAdmin()
-  return db.select().from(message).where(eq(message.bookingId, bookingId))
 }
