@@ -442,7 +442,7 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -16 }}
                     transition={{ duration: 0.2 }}
-                    className="border border-border"
+                    className="border border-border bg-background"
                   >
                     {/* Header */}
                     <div className="border-b border-border px-6 py-4">
@@ -665,7 +665,7 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
                     key="empty"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="border border-dashed border-border h-64 flex items-center justify-center"
+                    className="border border-dashed border-border bg-background/50 min-h-96 flex items-center justify-center rounded-sm"
                   >
                     <p className="font-sans text-sm text-muted-foreground/60">Select a booking to manage</p>
                   </motion.div>
