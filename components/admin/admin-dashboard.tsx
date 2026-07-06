@@ -212,8 +212,8 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
   )
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top bar - positioned below Navigation (h-20) */}
+    <div className="min-h-screen bg-background pt-20">
+      {/* Admin sub-header - positioned below Navigation (h-20) */}
       <header className="border-b border-border bg-background sticky top-20 z-30">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
           <div className="flex items-center gap-6">
@@ -235,17 +235,20 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
 
       <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { label: 'Total Bookings', value: stats.total },
             { label: 'Pending',        value: stats.pending },
             { label: 'Confirmed',      value: stats.confirmed },
             { label: 'Completed',      value: stats.completed },
           ].map((s) => (
-            <div key={s.label} className="border border-border p-5">
-              <p className="font-serif text-3xl text-foreground font-light">{s.value}</p>
-              <p className="font-sans text-xs text-muted-foreground tracking-[0.12em] uppercase mt-1">{s.label}</p>
+            <div 
+              key={s.label} 
+              className="border border-border bg-background rounded-sm hover:border-foreground/40 transition-colors duration-200 p-6"
+            >
+              <p className="font-serif text-4xl text-foreground font-light tracking-tight">{s.value}</p>
+              <p className="font-sans text-xs text-muted-foreground tracking-[0.15em] uppercase mt-3">{s.label}</p>
             </div>
           ))}
         </div>
