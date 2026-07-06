@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    unoptimized: true,
+    // Allow both quality values used across the app (75 default + 90 for hero/lightbox)
+    qualities: [75, 90],
   },
   // Limit server action payloads to prevent abuse (OWASP A05)
   experimental: {

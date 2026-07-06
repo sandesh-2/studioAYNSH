@@ -1,8 +1,7 @@
 'use client'
 
 import { signOut } from '@/lib/auth-client'
-import { PROGRESS_STAGES } from '@/lib/db/schema'
-import type { Booking } from '@/lib/db/schema'
+import { PROGRESS_STAGES, SERVICE_LABELS, type FullBooking } from '@/lib/db/schema'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Calendar, MapPin, Clock, IndianRupee,
@@ -14,49 +13,40 @@ import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 
 const STATUS_CONFIG = {
-  pending:   { label: 'Pending Review', color: 'text-amber-600',   bg: 'bg-amber-50   border-amber-200',       Icon: AlertCircle },
-  confirmed: { label: 'Confirmed',      color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200',     Icon: CheckCircle },
-  completed: { label: 'Completed',      color: 'text-foreground',  bg: 'bg-secondary  border-border',          Icon: CheckCircle },
+  pending:   { label: 'Pending Review', color: 'text-amber-600',   bg: 'bg-amber-50   border-amber-200',         Icon: AlertCircle },
+  confirmed: { label: 'Confirmed',      color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200',       Icon: CheckCircle },
+  completed: { label: 'Completed',      color: 'text-foreground',  bg: 'bg-secondary  border-border',            Icon: CheckCircle },
   cancelled: { label: 'Cancelled',      color: 'text-destructive', bg: 'bg-destructive/5 border-destructive/20', Icon: XCircle },
 } as const
 
-const SERVICE_LABELS: Record<string, string> = {
-  wedding:    'Wedding Photography',
-  prewedding: 'Pre-Wedding Photography',
-  portrait:   'Portrait Session',
-  fashion:    'Fashion Editorial',
-  drone:      'Drone Cinematography',
-  other:      'Other',
-}
-
-const ALL_SERVICES = ['wedding', 'prewedding', 'portrait', 'fashion', 'drone', 'other']
+const ALL_SERVICES = Object.keys(SERVICE_LABELS)
 type SortMode = 'newest' | 'oldest' | 'custom'
 const sortLabels: Record<SortMode, string> = { newest: 'Newest First', oldest: 'Oldest First', custom: 'Custom Range' }
 
 interface Props {
   user: { id: string; name: string; email: string; role?: string | null }
-  bookings: Booking[]
+  bookings: FullBooking[]
 }
 
 export function ClientPortalUI({ user, bookings: initial }: Props) {
   const router = useRouter()
-  const [bookings] = useState(initial)
-  const [activeBooking, setActiveBooking] = useState<Booking | null>(null)
+  const [bookings]                = useState(initial)
+  const [activeBooking, setActiveBooking] = useState<FullBooking | null>(null)
   const [signingOut, setSigningOut] = useState(false)
 
   // Sort & filter state
-  const [sortMode, setSortMode] = useState<SortMode>('newest')
+  const [sortMode, setSortMode]         = useState<SortMode>('newest')
   const [serviceFilter, setServiceFilter] = useState<string>('all')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-  const [showSortMenu, setShowSortMenu] = useState(false)
+  const [dateFrom, setDateFrom]         = useState('')
+  const [dateTo, setDateTo]             = useState('')
+  const [showSortMenu, setShowSortMenu]   = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
-  const sortRef = useRef<HTMLDivElement>(null)
+  const sortRef   = useRef<HTMLDivElement>(null)
   const filterRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setShowSortMenu(false)
+      if (sortRef.current   && !sortRef.current.contains(e.target as Node))   setShowSortMenu(false)
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) setShowFilterMenu(false)
     }
     document.addEventListener('mousedown', handler)
@@ -77,7 +67,7 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
       if (sortMode === 'custom' && (dateFrom || dateTo)) {
         const created = new Date(b.createdAt).getTime()
         if (dateFrom && created < new Date(dateFrom).getTime()) matchDate = false
-        if (dateTo && created > new Date(dateTo + 'T23:59:59').getTime()) matchDate = false
+        if (dateTo   && created > new Date(dateTo + 'T23:59:59').getTime()) matchDate = false
       }
       return matchService && matchDate
     })
@@ -97,8 +87,11 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
 
   // Progress helpers
   const activeProgressIdx = PROGRESS_STAGES.findIndex(
-    (s) => s.key === (activeBooking?.progressStage ?? 'enquiry_received')
+    (s) => s.key === (activeBooking?.progressStage ?? 'enquiry_received'),
   )
+
+  // Latest studio note to show in the portal detail
+  const latestNote = activeBooking?.notes?.[0] ?? null
 
   return (
     <main className="pt-20 min-h-screen bg-background">
@@ -181,9 +174,7 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                         className="absolute top-full left-0 right-0 z-30 mt-1 border border-border bg-background shadow-sm"
                       >
                         {(['newest', 'oldest', 'custom'] as SortMode[]).map((m) => (
-                          <button
-                            key={m}
-                            onClick={() => { setSortMode(m); setShowSortMenu(false) }}
+                          <button key={m} onClick={() => { setSortMode(m); setShowSortMenu(false) }}
                             className={`w-full text-left px-3 py-2.5 font-sans text-[11px] tracking-[0.08em] uppercase transition-colors duration-150 ${
                               sortMode === m ? 'text-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                             }`}
@@ -201,7 +192,10 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                     onClick={() => { setShowFilterMenu((v) => !v); setShowSortMenu(false) }}
                     className="w-full flex items-center justify-between gap-1.5 border border-border px-3 py-2 font-sans text-[11px] tracking-[0.08em] uppercase text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-colors duration-200"
                   >
-                    <span className="flex items-center gap-1.5 truncate"><SlidersHorizontal size={11} className="shrink-0" /><span className="truncate">{serviceFilter === 'all' ? 'All Services' : SERVICE_LABELS[serviceFilter]?.split(' ')[0]}</span></span>
+                    <span className="flex items-center gap-1.5 truncate">
+                      <SlidersHorizontal size={11} className="shrink-0" />
+                      <span className="truncate">{serviceFilter === 'all' ? 'All Services' : SERVICE_LABELS[serviceFilter]?.split(' ')[0]}</span>
+                    </span>
                     <ChevronDown size={11} className={`transition-transform duration-200 shrink-0 ${showFilterMenu ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
@@ -213,16 +207,13 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                         transition={{ duration: 0.15 }}
                         className="absolute top-full left-0 right-0 z-30 mt-1 border border-border bg-background shadow-sm"
                       >
-                        <button
-                          onClick={() => { setServiceFilter('all'); setShowFilterMenu(false) }}
+                        <button onClick={() => { setServiceFilter('all'); setShowFilterMenu(false) }}
                           className={`w-full text-left px-3 py-2.5 font-sans text-[11px] tracking-[0.08em] uppercase transition-colors duration-150 ${serviceFilter === 'all' ? 'text-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}
                         >
                           All Services
                         </button>
                         {ALL_SERVICES.map((svc) => (
-                          <button
-                            key={svc}
-                            onClick={() => { setServiceFilter(svc); setShowFilterMenu(false) }}
+                          <button key={svc} onClick={() => { setServiceFilter(svc); setShowFilterMenu(false) }}
                             className={`w-full text-left px-3 py-2.5 font-sans text-[11px] tracking-[0.08em] uppercase transition-colors duration-150 ${serviceFilter === svc ? 'text-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}
                           >
                             {SERVICE_LABELS[svc]}
@@ -281,8 +272,8 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                           <p className="font-sans text-sm font-medium text-foreground truncate">
                             {SERVICE_LABELS[b.service] ?? b.service}
                           </p>
-                          <p className="font-sans text-xs text-muted-foreground mt-0.5">{b.eventDate}</p>
-                          <p className="font-sans text-xs text-muted-foreground truncate">{b.location}</p>
+                          <p className="font-sans text-xs text-muted-foreground mt-0.5">{b.event?.eventDate ?? '—'}</p>
+                          <p className="font-sans text-xs text-muted-foreground truncate">{b.event?.location ?? '—'}</p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0 pt-0.5">
                           <span className={`font-sans text-[10px] tracking-[0.1em] uppercase ${cfg.color}`}>
@@ -340,16 +331,13 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                     <div className="border-b border-border px-6 py-5 bg-secondary/30">
                       <p className={`${labelClass} mb-4`}>Your Progress</p>
                       <div className="relative">
-                        {/* Vertical line */}
                         <div className="absolute left-[10px] top-3 bottom-3 w-px bg-border" aria-hidden="true" />
                         <ol className="space-y-0.5">
                           {PROGRESS_STAGES.map((stage, idx) => {
-                            const isDone = idx <= activeProgressIdx
+                            const isDone    = idx <= activeProgressIdx
                             const isCurrent = idx === activeProgressIdx
-                            const isFuture = idx > activeProgressIdx
                             return (
                               <li key={stage.key} className="relative flex items-start gap-4 py-2">
-                                {/* Step indicator */}
                                 <span
                                   className={`relative z-10 mt-0.5 w-[20px] h-[20px] rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 ${
                                     isCurrent
@@ -390,15 +378,15 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                       </div>
                     </div>
 
-                    {/* Details grid */}
+                    {/* Details grid — from booking_event */}
                     <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-5 border-b border-border">
                       {[
-                        { Icon: Calendar,    label: 'Event Date', value: activeBooking.eventDate },
-                        { Icon: Clock,       label: 'Time',       value: activeBooking.eventTime ?? '—' },
-                        { Icon: MapPin,      label: 'Location',   value: activeBooking.location },
-                        { Icon: Clock,       label: 'Duration',   value: activeBooking.duration ?? '—' },
-                        { Icon: IndianRupee, label: 'Budget',     value: activeBooking.budget ?? '—' },
-                        { Icon: Users,       label: 'Guests',     value: activeBooking.guestCount ?? '—' },
+                        { Icon: Calendar,    label: 'Event Date', value: activeBooking.event?.eventDate ?? '—' },
+                        { Icon: Clock,       label: 'Time',       value: activeBooking.event?.eventTime ?? '—' },
+                        { Icon: MapPin,      label: 'Location',   value: activeBooking.event?.location  ?? '—' },
+                        { Icon: Clock,       label: 'Duration',   value: activeBooking.event?.duration  ?? '—' },
+                        { Icon: IndianRupee, label: 'Budget Hint', value: activeBooking.financials?.paymentNotes ?? '—' },
+                        { Icon: Users,       label: 'Guests',     value: activeBooking.event?.guestCount?.toString() ?? '—' },
                       ].map(({ Icon, label, value }) => (
                         <div key={label} className="flex items-start gap-3">
                           <Icon size={13} className="text-muted-foreground mt-0.5 shrink-0" />
@@ -411,29 +399,39 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                     </div>
 
                     {/* Special requests */}
-                    {activeBooking.specialRequests && (
+                    {activeBooking.event?.specialRequests && (
                       <div className="px-6 py-4 border-b border-border">
                         <p className={`${labelClass} mb-2`}>Vision / Special Requests</p>
-                        <p className="font-sans text-sm text-foreground leading-relaxed">{activeBooking.specialRequests}</p>
+                        <p className="font-sans text-sm text-foreground leading-relaxed">{activeBooking.event.specialRequests}</p>
                       </div>
                     )}
 
-                    {/* Admin note to client */}
-                    {activeBooking.adminNotes && (
+                    {/* Latest note from studio */}
+                    {latestNote && (
                       <div className="px-6 py-4 border-b border-border bg-secondary">
                         <p className={`${labelClass} mb-2`}>Note from Studio AYNSH</p>
-                        <p className="font-sans text-sm text-foreground leading-relaxed">{activeBooking.adminNotes}</p>
+                        <p className="font-sans text-sm text-foreground leading-relaxed">{latestNote.content}</p>
+                        <p className="font-sans text-[10px] text-muted-foreground mt-1">
+                          {new Date(latestNote.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
+                        </p>
                       </div>
                     )}
 
-                    {/* Pricing */}
-                    {activeBooking.totalAmount && (
+                    {/* Pricing — from booking_financials */}
+                    {activeBooking.financials?.totalAmount && (
                       <div className="px-6 py-4 flex items-center justify-between">
                         <div>
                           <p className={`${labelClass} mb-1`}>Total Amount</p>
-                          <p className="font-serif text-xl text-foreground">{activeBooking.totalAmount}</p>
+                          <p className="font-serif text-xl text-foreground">
+                            ₹{parseFloat(activeBooking.financials.totalAmount).toLocaleString('en-IN')}
+                          </p>
+                          {activeBooking.financials.depositAmount && (
+                            <p className="font-sans text-xs text-muted-foreground mt-0.5">
+                              Deposit: ₹{parseFloat(activeBooking.financials.depositAmount).toLocaleString('en-IN')}
+                            </p>
+                          )}
                         </div>
-                        {activeBooking.depositPaid && (
+                        {activeBooking.financials.depositPaid && (
                           <span className="font-sans text-[10px] tracking-[0.1em] uppercase text-emerald-700 border border-emerald-200 bg-emerald-50 px-3 py-1.5">
                             Deposit Paid
                           </span>
@@ -458,9 +456,9 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
 
         {/* Quick links */}
         <div className="border-t border-border pt-8 flex flex-wrap gap-6">
-          <Link href="/booking" className="font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200">New Booking</Link>
+          <Link href="/booking"   className="font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200">New Booking</Link>
           <Link href="/portfolio" className="font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200">View Portfolio</Link>
-          <Link href="/contact" className="font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200">Contact Us</Link>
+          <Link href="/contact"   className="font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200">Contact Us</Link>
         </div>
       </div>
     </main>

@@ -1,10 +1,11 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { booking, user } from '@/lib/db/schema'
-import { desc, eq } from 'drizzle-orm'
+import { user } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { AdminDashboard } from '@/components/admin/admin-dashboard'
+import { getAllBookings, getAllClients } from '@/app/actions/admin'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -26,8 +27,8 @@ export default async function AdminPage() {
   if (!dbUser || dbUser.role !== 'admin') redirect('/')
 
   const [bookings, clients] = await Promise.all([
-    db.select().from(booking).orderBy(desc(booking.createdAt)),
-    db.select().from(user).orderBy(desc(user.createdAt)),
+    getAllBookings(),
+    getAllClients(),
   ])
 
   return <AdminDashboard bookings={bookings} clients={clients} adminName={session.user.name} />
