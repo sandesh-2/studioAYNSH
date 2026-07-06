@@ -11,7 +11,7 @@ const authPool =
     max: 10,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
   })
 
 if (process.env.NODE_ENV !== 'production') globalForAuthPool.authPool = authPool
