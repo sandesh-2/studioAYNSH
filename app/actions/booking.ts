@@ -179,7 +179,7 @@ async function sendConfirmationEmail(input: BookingInput, bookingId: string) {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Studio AYNSH <bookings@studioaynsh.com>',
+        from: 'Studio AYNSH <onboarding@resend.dev>',
         to: [input.clientEmail],
         subject: `Booking Confirmed — ${serviceName} | Studio AYNSH`,
         html,
@@ -209,7 +209,7 @@ async function sendStudioOwnerNotification(bookingDetails: {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return // Skip if Resend key not configured
 
-  const studioEmail = 'samratgupta7754@gmail.com' // Studio owner email — update this
+  const studioEmail = 'sandeshkg254@gmail.com' // Studio owner email — update this
 
   const serviceLabels: Record<string, string> = {
     wedding: 'Wedding Photography',
@@ -312,7 +312,7 @@ async function sendStudioOwnerNotification(bookingDetails: {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Studio AYNSH <bookings@studioaynsh.com>',
+        from: 'Studio AYNSH <onboarding@resend.dev>',
         to: [studioEmail],
         subject: `📸 New Booking: ${serviceName} on ${bookingDetails.eventDate}`,
         html,
