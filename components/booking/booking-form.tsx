@@ -16,7 +16,8 @@ interface BookingData {
   service: string
   eventDate: string
   eventTime: string
-  location: string
+  state: string
+  city: string
   budget: string
   specialRequests: string
 }
@@ -34,6 +35,47 @@ const SERVICES = [
   { label: 'Fashion Editorial', value: 'fashion' },
   { label: 'Drone Cinematography', value: 'drone' },
   { label: 'Other', value: 'other' },
+]
+
+// All 28 states + 8 Union Territories of India
+const INDIA_STATES = [
+  { label: 'Andhra Pradesh',          value: 'Andhra Pradesh' },
+  { label: 'Arunachal Pradesh',       value: 'Arunachal Pradesh' },
+  { label: 'Assam',                   value: 'Assam' },
+  { label: 'Bihar',                   value: 'Bihar' },
+  { label: 'Chhattisgarh',            value: 'Chhattisgarh' },
+  { label: 'Goa',                     value: 'Goa' },
+  { label: 'Gujarat',                 value: 'Gujarat' },
+  { label: 'Haryana',                 value: 'Haryana' },
+  { label: 'Himachal Pradesh',        value: 'Himachal Pradesh' },
+  { label: 'Jharkhand',               value: 'Jharkhand' },
+  { label: 'Karnataka',               value: 'Karnataka' },
+  { label: 'Kerala',                  value: 'Kerala' },
+  { label: 'Madhya Pradesh',          value: 'Madhya Pradesh' },
+  { label: 'Maharashtra',             value: 'Maharashtra' },
+  { label: 'Manipur',                 value: 'Manipur' },
+  { label: 'Meghalaya',               value: 'Meghalaya' },
+  { label: 'Mizoram',                 value: 'Mizoram' },
+  { label: 'Nagaland',                value: 'Nagaland' },
+  { label: 'Odisha',                  value: 'Odisha' },
+  { label: 'Punjab',                  value: 'Punjab' },
+  { label: 'Rajasthan',               value: 'Rajasthan' },
+  { label: 'Sikkim',                  value: 'Sikkim' },
+  { label: 'Tamil Nadu',              value: 'Tamil Nadu' },
+  { label: 'Telangana',               value: 'Telangana' },
+  { label: 'Tripura',                 value: 'Tripura' },
+  { label: 'Uttar Pradesh',           value: 'Uttar Pradesh' },
+  { label: 'Uttarakhand',             value: 'Uttarakhand' },
+  { label: 'West Bengal',             value: 'West Bengal' },
+  // Union Territories
+  { label: 'Andaman & Nicobar Islands',       value: 'Andaman & Nicobar Islands' },
+  { label: 'Chandigarh',                      value: 'Chandigarh' },
+  { label: 'Dadra & Nagar Haveli and Daman & Diu', value: 'Dadra & Nagar Haveli and Daman & Diu' },
+  { label: 'Delhi (NCT)',                     value: 'Delhi (NCT)' },
+  { label: 'Jammu & Kashmir',                 value: 'Jammu & Kashmir' },
+  { label: 'Ladakh',                          value: 'Ladakh' },
+  { label: 'Lakshadweep',                     value: 'Lakshadweep' },
+  { label: 'Puducherry',                      value: 'Puducherry' },
 ]
 
 const BUDGETS = [
@@ -93,19 +135,21 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
     }
   }, [loggedInUser, setValue])
 
-  const selectedDate = watch('eventDate')
-  const selectedTime = watch('eventTime')
+  const selectedDate    = watch('eventDate')
+  const selectedTime    = watch('eventTime')
   const selectedService = watch('service')
-  const selectedBudget = watch('budget')
+  const selectedState   = watch('state')
+  const selectedBudget  = watch('budget')
 
   async function goNext() {
     let valid = false
     if (step === 1) {
       valid = await trigger(['clientName', 'clientEmail', 'clientPhone'])
     } else if (step === 2) {
-      valid = await trigger(['service', 'eventDate', 'location'])
+      valid = await trigger(['service', 'eventDate', 'state', 'city'])
       if (!selectedService) { valid = false }
-      if (!selectedDate) { valid = false }
+      if (!selectedDate)    { valid = false }
+      if (!selectedState)   { valid = false }
     }
     if (valid) {
       setDirection(1)
@@ -123,6 +167,8 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
     setSubmitting(true)
     setServerError('')
     try {
+      // Combine state + city into a single location string for the DB
+      const location = [data.city?.trim(), data.state?.trim()].filter(Boolean).join(', ')
       const result = await createBooking({
         clientName: data.clientName,
         clientEmail: data.clientEmail,
@@ -130,7 +176,7 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
         service: data.service,
         eventDate: data.eventDate,
         eventTime: data.eventTime || '',
-        location: data.location,
+        location,
         budget: data.budget || '',
         specialRequests: data.specialRequests || '',
       })
@@ -232,7 +278,8 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
 
       {/* ── Step panels ─────────────────────────────────────────────────── */}
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="relative overflow-hidden min-h-[360px]">
+        {/* overflow must be visible so CustomSelect dropdowns are not clipped */}
+        <div className="relative min-h-[360px]">
           <AnimatePresence mode="wait" custom={direction}>
 
             {/* Step 1: Personal Details */}
@@ -366,22 +413,45 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
                   />
                 </div>
 
-                {/* Venue / location */}
-                <div>
-                  <label htmlFor="location" className={labelClass}>Venue / Location</label>
-                  <input
-                    id="location"
-                    type="text"
-                    placeholder="City, venue name, or region"
-                    {...register('location', {
-                      required: 'Please enter a location',
-                      minLength: { value: 2, message: 'Too short' },
-                    })}
-                    className={inputClass}
-                  />
-                  {errors.location && (
-                    <p className="mt-1.5 font-sans text-xs text-destructive">{errors.location.message}</p>
-                  )}
+                {/* State + City / Venue */}
+                <div className="grid grid-cols-2 gap-5">
+                  {/* State dropdown */}
+                  <div>
+                    <label className={labelClass}>State</label>
+                    <CustomSelect
+                      options={INDIA_STATES}
+                      value={selectedState}
+                      onChange={(v) => setValue('state', v, { shouldValidate: true })}
+                      placeholder="Select state"
+                      error={errors.state?.message}
+                    />
+                    {errors.state && (
+                      <p className="mt-1.5 font-sans text-xs text-destructive">Please select a state</p>
+                    )}
+                    {/* Hidden input so react-hook-form tracks the value */}
+                    <input
+                      type="hidden"
+                      {...register('state', { required: true })}
+                    />
+                  </div>
+
+                  {/* City / venue free text */}
+                  <div>
+                    <label htmlFor="city" className={labelClass}>City / Venue</label>
+                    <input
+                      id="city"
+                      type="text"
+                      placeholder="Mumbai, The Leela..."
+                      {...register('city', {
+                        required: 'Please enter a city or venue',
+                        minLength: { value: 2, message: 'Too short' },
+                      })}
+                      className={inputClass}
+                    />
+                    {errors.city && (
+                      <p className="mt-1.5 font-sans text-xs text-destructive">{errors.city.message}</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Budget */}
