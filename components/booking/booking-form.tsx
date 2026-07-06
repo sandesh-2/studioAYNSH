@@ -74,9 +74,6 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [serverError, setServerError] = useState('')
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [showTimePicker, setShowTimePicker] = useState(false)
-
   const {
     register,
     handleSubmit,
@@ -343,59 +340,30 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
                   )}
                 </div>
 
-                {/* Preferred date */}
+                {/* Preferred date — CalendarPicker has its own trigger */}
                 <div>
                   <label className={labelClass}>Preferred Date</label>
-                  <button
-                    type="button"
-                    onClick={() => { setShowDatePicker((p) => !p); setShowTimePicker(false) }}
-                    className={`${inputClass} text-left ${!selectedDate ? 'text-muted-foreground/50' : ''}`}
-                  >
-                    {selectedDate
-                      ? new Date(selectedDate).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })
-                      : 'Select a date'}
-                  </button>
-                  {showDatePicker && (
-                    <div className="mt-4 p-4 border border-border bg-secondary">
-                      <CalendarPicker
-                        value={selectedDate}
-                        onChange={(d) => {
-                          setValue('eventDate', d, { shouldValidate: true })
-                          setShowDatePicker(false)
-                        }}
-                      />
-                    </div>
-                  )}
+                  <CalendarPicker
+                    value={selectedDate}
+                    onChange={(d) => setValue('eventDate', d, { shouldValidate: true })}
+                    error={errors.eventDate?.message}
+                  />
                   {errors.eventDate && (
                     <p className="mt-1.5 font-sans text-xs text-destructive">Please select a date</p>
                   )}
                 </div>
 
-                {/* Preferred time */}
+                {/* Preferred time — TimePicker has its own trigger */}
                 <div>
-                  <label className={labelClass}>Preferred Time <span className="text-muted-foreground/50 normal-case tracking-normal">(optional)</span></label>
-                  <button
-                    type="button"
-                    onClick={() => { setShowTimePicker((p) => !p); setShowDatePicker(false) }}
-                    className={`${inputClass} text-left ${!selectedTime ? 'text-muted-foreground/50' : ''}`}
-                  >
-                    {selectedTime || 'Select a time'}
-                  </button>
-                  {showTimePicker && (
-                    <div className="mt-4 p-4 border border-border bg-secondary">
-                      <TimePicker
-                        value={selectedTime}
-                        onChange={(t) => {
-                          setValue('eventTime', t)
-                          setShowTimePicker(false)
-                        }}
-                      />
-                    </div>
-                  )}
+                  <label className={labelClass}>
+                    Preferred Time{' '}
+                    <span className="text-muted-foreground/50 normal-case tracking-normal">(optional)</span>
+                  </label>
+                  <TimePicker
+                    value={selectedTime}
+                    onChange={(t) => setValue('eventTime', t)}
+                    error={errors.eventTime?.message}
+                  />
                 </div>
 
                 {/* Venue / location */}

@@ -32,18 +32,16 @@ export function LightboxModal({ items, index, onClose, onPrev, onNext }: Lightbo
   const [zoom, setZoom]             = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // Pan offset — used only when zoomed in
+  // Pan offset (pixels) — bounded manually so image never leaves frame
   const panX = useMotionValue(0)
   const panY = useMotionValue(0)
 
-  // Swipe-to-navigate opacity — driven by horizontal swipe distance at zoom=1
+  // Swipe-to-navigate opacity at zoom = 1
   const swipeX  = useMotionValue(0)
   const opacity = useTransform(swipeX, [-200, 0, 200], [0.4, 1, 0.4])
 
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const imageWrapRef  = useRef<HTMLDivElement>(null)
-  const touchStartX   = useRef<number | null>(null)
-  const touchStartY   = useRef<number | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const imageWrapRef = useRef<HTMLDivElement>(null)
 
   // ── Reset pan + zoom when image changes ─────────────────────────────────
   useEffect(() => {
@@ -53,33 +51,34 @@ export function LightboxModal({ items, index, onClose, onPrev, onNext }: Lightbo
     swipeX.set(0)
   }, [index]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Also clamp pan back into bounds whenever zoom changes
+  // Animate pan back to origin when zoom resets to 1
   useEffect(() => {
     if (zoom <= 1) {
       animate(panX, 0, { duration: 0.2 })
       animate(panY, 0, { duration: 0.2 })
-    } else {
-      clampPan()
     }
   }, [zoom]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Compute pan bounds from zoom level and container size ────────────────
+  // ── Compute pan bounds from zoom level + current container size ──────────
+  // Returns the max pixel offsets so the image edge never exits the container.
   function getPanBounds() {
     const el = imageWrapRef.current
-    if (!el) return { left: 0, right: 0, top: 0, bottom: 0 }
+    if (!el || zoom <= 1) return { left: 0, right: 0, top: 0, bottom: 0 }
     const { width, height } = el.getBoundingClientRect()
-    // Extra pixels the zoomed image extends beyond the container edge
+    // The image is scaled about the center so each edge extends by (zoom-1)/2
     const hw = (width  * (zoom - 1)) / 2
     const hh = (height * (zoom - 1)) / 2
+    // Framer dragConstraints: left/top are negative, right/bottom are positive
     return { left: -hw, right: hw, top: -hh, bottom: hh }
   }
 
+  // Snap pan back inside bounds (called after drag ends)
   function clampPan() {
     const { left, right, top, bottom } = getPanBounds()
     const cx = Math.max(left, Math.min(right,  panX.get()))
     const cy = Math.max(top,  Math.min(bottom, panY.get()))
-    animate(panX, cx, { duration: 0.15 })
-    animate(panY, cy, { duration: 0.15 })
+    animate(panX, cx, { duration: 0.18, ease: 'easeOut' })
+    animate(panY, cy, { duration: 0.18, ease: 'easeOut' })
   }
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
@@ -89,14 +88,14 @@ export function LightboxModal({ items, index, onClose, onPrev, onNext }: Lightbo
         if (isFullscreen) { document.exitFullscreen?.(); setIsFullscreen(false) }
         else onClose()
       }
-      if (e.key === 'ArrowLeft'  && zoom === 1) onPrev()
-      if (e.key === 'ArrowRight' && zoom === 1) onNext()
+      if (e.key === 'ArrowLeft')  onPrev()
+      if (e.key === 'ArrowRight') onNext()
       if ((e.key === '+' || e.key === '=') && !e.ctrlKey)
-        setZoom((z) => Math.min(z + ZOOM_STEP, ZOOM_MAX))
+        setZoom((z) => +(Math.min(z + ZOOM_STEP, ZOOM_MAX)).toFixed(2))
       if (e.key === '-' && !e.ctrlKey)
-        setZoom((z) => Math.max(z - ZOOM_STEP, ZOOM_MIN))
+        setZoom((z) => +(Math.max(z - ZOOM_STEP, ZOOM_MIN)).toFixed(2))
     },
-    [onClose, onPrev, onNext, zoom, isFullscreen],
+    [onClose, onPrev, onNext, isFullscreen],
   )
 
   useEffect(() => {
@@ -127,50 +126,20 @@ export function LightboxModal({ items, index, onClose, onPrev, onNext }: Lightbo
     return () => document.removeEventListener('fullscreenchange', onFSChange)
   }, [])
 
-  // ── Touch swipe / pan handlers ────────────────────────────────────────────
-  function onTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
-
-  function onTouchMove(e: React.TouchEvent) {
-    if (zoom <= 1 || touchStartX.current === null) return
-    // Prevent the page from scrolling while panning a zoomed image
-    e.preventDefault()
-  }
-
-  function onTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null) return
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    const dy = e.changedTouches[0].clientY - (touchStartY.current ?? 0)
-    touchStartX.current = null
-    touchStartY.current = null
-
-    if (zoom > 1) {
-      // Pan: apply delta clamped to bounds
-      const { left, right, top, bottom } = getPanBounds()
-      const nx = Math.max(left,  Math.min(right,  panX.get() + dx))
-      const ny = Math.max(top,   Math.min(bottom, panY.get() + dy))
-      animate(panX, nx, { duration: 0.15 })
-      animate(panY, ny, { duration: 0.15 })
-    } else {
-      // Swipe to navigate
-      if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx < -50) onNext()
-        else if (dx > 50) onPrev()
-      }
-    }
-  }
-
   // ── Helpers ───────────────────────────────────────────────────────────────
   const hasPrev = index !== null && index > 0
   const hasNext = index !== null && index < items.length - 1
 
-  function zoomIn()  { setZoom((z) => Math.min(+(z + ZOOM_STEP).toFixed(2), ZOOM_MAX)) }
-  function zoomOut() { setZoom((z) => Math.max(+(z - ZOOM_STEP).toFixed(2), ZOOM_MIN)) }
+  function zoomIn()  { setZoom((z) => +(Math.min(z + ZOOM_STEP, ZOOM_MAX)).toFixed(2)) }
+  function zoomOut() { setZoom((z) => +(Math.max(z - ZOOM_STEP, ZOOM_MIN)).toFixed(2)) }
 
   const iconBtn =
     'p-2.5 text-background/55 hover:text-background transition-colors duration-200 border border-background/15 hover:border-background/50 bg-foreground/25 hover:bg-foreground/45 backdrop-blur-sm'
+
+  // ── Backdrop click: only close when clicking the dark background directly ─
+  function handleBackdropClick(e: React.MouseEvent) {
+    if (e.target === e.currentTarget) onClose()
+  }
 
   return (
     <AnimatePresence>
@@ -182,13 +151,11 @@ export function LightboxModal({ items, index, onClose, onPrev, onNext }: Lightbo
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
           className="fixed inset-0 z-[100] bg-foreground/96 flex items-center justify-center"
-          onClick={zoom === 1 ? onClose : undefined}
+          // Only close when clicking the raw backdrop, not any child element
+          onClick={handleBackdropClick}
           role="dialog"
           aria-modal="true"
           aria-label={`Photo: ${item.title}`}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
         >
           {/* ── Top bar ───────────────────────────────────────────────── */}
           <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-5 py-4">
@@ -237,19 +204,20 @@ export function LightboxModal({ items, index, onClose, onPrev, onNext }: Lightbo
             </div>
           </div>
 
-          {/* ── Prev / Next ────────────────────────────────────────────── */}
+          {/* ── Prev button — always enabled when hasPrev ─────────────── */}
           <button
             onClick={(e) => { e.stopPropagation(); onPrev() }}
-            disabled={!hasPrev || zoom > 1}
+            disabled={!hasPrev}
             aria-label="Previous image"
             className="absolute left-4 md:left-8 z-10 p-3 text-background/60 hover:text-background disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200 border border-background/20 hover:border-background/60 bg-foreground/30 hover:bg-foreground/50 backdrop-blur-sm"
           >
             <ChevronLeft size={22} />
           </button>
 
+          {/* ── Next button — always enabled when hasNext ─────────────── */}
           <button
             onClick={(e) => { e.stopPropagation(); onNext() }}
-            disabled={!hasNext || zoom > 1}
+            disabled={!hasNext}
             aria-label="Next image"
             className="absolute right-4 md:right-8 z-10 p-3 text-background/60 hover:text-background disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200 border border-background/20 hover:border-background/60 bg-foreground/30 hover:bg-foreground/50 backdrop-blur-sm"
           >
@@ -257,15 +225,9 @@ export function LightboxModal({ items, index, onClose, onPrev, onNext }: Lightbo
           </button>
 
           {/* ── Image container ────────────────────────────────────────── */}
-          {/*
-            Outer: handles swipe-to-navigate opacity at zoom=1 via `swipeX`.
-            We DON'T use Framer `drag` on the outer wrapper — instead we handle
-            all dragging manually to keep full control over constraints.
-          */}
           <AnimatePresence mode="wait">
             <motion.div
               key={item.id}
-              ref={imageWrapRef}
               initial={{ opacity: 0, scale: 0.97, x: 30 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.97, x: -30 }}
@@ -273,7 +235,7 @@ export function LightboxModal({ items, index, onClose, onPrev, onNext }: Lightbo
               style={{ opacity, aspectRatio: '4/3', maxHeight: '78vh' }}
               className="relative w-full max-w-5xl mx-16 md:mx-24 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
-              // Swipe-to-navigate via drag only at zoom=1
+              // Swipe-to-navigate at zoom = 1 only
               drag={zoom === 1 ? 'x' : false}
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.18}
@@ -286,20 +248,21 @@ export function LightboxModal({ items, index, onClose, onPrev, onNext }: Lightbo
               }}
             >
               {/*
-                Inner pan layer: handles panning when zoomed.
-                x/y are bounded to prevent the image from leaving the frame.
-                overflow:hidden on the parent clips anything outside the box.
+                Pan layer — manually bounded via `dragConstraints` object.
+                We pass computed pixel values so Framer Motor clamps correctly
+                even though the visual scale is applied on a child element.
               */}
               <motion.div
+                ref={imageWrapRef}
                 style={{ x: panX, y: panY, width: '100%', height: '100%' }}
-                drag={zoom > 1}
-                dragConstraints={imageWrapRef}
+                drag={zoom > 1 ? true : false}
+                dragConstraints={getPanBounds()}
                 dragElastic={0}
                 dragMomentum={false}
-                onDragEnd={() => clampPan()}
+                onDragEnd={clampPan}
                 whileDrag={{ cursor: 'grabbing' }}
               >
-                {/* Scale layer: applies zoom transform anchored at center */}
+                {/* Scale layer: visual zoom anchored at center */}
                 <motion.div
                   className="w-full h-full"
                   animate={{ scale: zoom }}
