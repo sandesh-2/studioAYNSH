@@ -139,7 +139,7 @@ export function Navigation() {
               </Link>
             ))}
 
-            {/* Auth State: Portal/My Account */}
+            {/* Auth State: Portal/My Account - Show Portal only before login */}
             {session ? (
               <div ref={dropdownRef} className="relative">
                 <button
@@ -201,12 +201,15 @@ export function Navigation() {
             )}
           </nav>
           
-          <Link
-            href="/booking"
-            className="hidden ml-8 items-center justify-center px-6 py-2 text-xs font-sans font-medium tracking-[0.15em] uppercase border border-foreground/60 text-foreground hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-300 hover:shadow-sm"
-          >
-            Book Now
-          </Link>
+          {/* Book Now button - visible on desktop, hidden after login */}
+          {!session && (
+            <Link
+              href="/booking"
+              className="inline-flex ml-8 items-center justify-center px-6 py-2 text-xs font-sans font-medium tracking-[0.15em] uppercase border border-foreground/60 text-foreground hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-300 hover:shadow-sm"
+            >
+              Book Now
+            </Link>
+          )}
         </div>
 
         {/* Mobile Navigation */}
@@ -226,14 +229,6 @@ export function Navigation() {
 
           {/* Right: Icons + Hamburger */}
           <div className="flex items-center gap-3">
-            {/* Book Now Button - visible on mobile */}
-            <Link
-              href="/booking"
-              className="sm:hidden inline-flex items-center justify-center px-3 py-1.5 text-[10px] font-sans font-medium tracking-[0.12em] uppercase border border-foreground/60 text-foreground hover:bg-foreground hover:text-background transition-all duration-300"
-            >
-              Book
-            </Link>
-
             {/* My Account / Portal Icon */}
             {session ? (
               <div ref={dropdownRef} className="relative">
@@ -312,7 +307,7 @@ export function Navigation() {
         </div>
       </motion.header>
 
-      {/* Mobile menu */}
+      {/* Mobile menu - Full screen elegant overlay */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -320,9 +315,10 @@ export function Navigation() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="fixed inset-0 top-20 z-40 lg:hidden bg-background/98 backdrop-blur-sm flex flex-col justify-center px-6 pb-20"
+            className="fixed inset-0 z-40 lg:hidden bg-background/99 backdrop-blur-lg flex flex-col justify-center px-6 pb-20 pt-32"
           >
             <nav className="flex flex-col gap-10" aria-label="Mobile navigation">
+              {/* Main navigation links */}
               {allNavLinks.map((link, i) => (
                 <motion.div
                   key={link.href}
@@ -340,15 +336,27 @@ export function Navigation() {
                 </motion.div>
               ))}
 
-              {/* Mobile Portal/Account option */}
+              {/* Separator before auth/account section */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: allNavLinks.length * 0.08 + 0.1, duration: 0.4 }}
                 className="pt-8 border-t border-border/20"
               >
-                {session ? (
-                  <div className="space-y-6">
+                {/* Show Portal only before login */}
+                {!session && (
+                  <Link
+                    href="/portal"
+                    onClick={() => setMenuOpen(false)}
+                    className="block font-serif text-3xl sm:text-4xl font-light tracking-widest text-foreground hover:text-gold transition-colors duration-300 mb-10"
+                  >
+                    Portal
+                  </Link>
+                )}
+
+                {/* Show My Account and Sign Out only after login */}
+                {session && (
+                  <div className="space-y-6 mb-10">
                     <Link
                       href={getPortalLink()}
                       onClick={() => setMenuOpen(false)}
@@ -366,36 +374,33 @@ export function Navigation() {
                       Sign Out
                     </button>
                   </div>
-                ) : (
-                  <Link
-                    href="/portal"
-                    onClick={() => setMenuOpen(false)}
-                    className="font-serif text-3xl sm:text-4xl font-light tracking-widest text-foreground hover:text-gold transition-colors duration-300"
-                  >
-                    Portal
-                  </Link>
                 )}
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: (allNavLinks.length + 1) * 0.08 + 0.1, duration: 0.4 }}
-              >
-                <Link
-                  href="/booking"
-                  onClick={() => setMenuOpen(false)}
-                  className="inline-flex items-center justify-center px-8 py-3 text-sm font-sans font-medium tracking-[0.15em] uppercase border border-foreground text-foreground hover:bg-foreground hover:text-background transition-all duration-300 mt-4"
+              {/* Show Book Now only before login */}
+              {!session && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: (allNavLinks.length + 1) * 0.08 + 0.1, duration: 0.4 }}
                 >
-                  Book Now
-                </Link>
-              </motion.div>
+                  <Link
+                    href="/booking"
+                    onClick={() => setMenuOpen(false)}
+                    className="inline-flex items-center justify-center px-8 py-3 text-sm font-sans font-medium tracking-[0.15em] uppercase border border-foreground text-foreground hover:bg-foreground hover:text-background transition-all duration-300"
+                  >
+                    Book Now
+                  </Link>
+                </motion.div>
+              )}
             </nav>
-            <div className="absolute bottom-12 left-6 right-6 flex items-center justify-between">
+
+            {/* Footer contact info */}
+            <div className="absolute bottom-12 left-6 right-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <p className="text-xs sm:text-sm font-sans text-muted-foreground tracking-wide">
                 +91 7084019414
               </p>
-              <p className="text-xs sm:text-sm font-sans text-muted-foreground tracking-wide">
+              <p className="text-xs sm:text-sm font-sans text-muted-foreground tracking-wide break-all">
                 samratgupta7754@gmail.com
               </p>
             </div>
