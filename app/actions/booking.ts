@@ -143,7 +143,7 @@ export async function createBooking(input: BookingInput) {
     // ── Email notifications ───────────────────────────────────────────────
     // Do not fail the booking if emails fail; they're asynchronous notifications
     Promise.all([
-      sendConfirmationEmail({ ...input, clientName, clientEmail }, bookingId),
+      // sendConfirmationEmail({ ...input, clientName, clientEmail }, bookingId),
       sendStudioOwnerNotification({ bookingId, clientName, clientEmail, clientPhone, service, eventDate,
         eventTime: input.eventTime ?? null, location,
         duration: input.duration ?? null, budget: input.budget ?? null,
