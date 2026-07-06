@@ -1,7 +1,8 @@
 'use client'
 
 import { AnimatePresence, motion, useInView } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const testimonials = [
   {
@@ -26,8 +27,29 @@ const testimonials = [
 
 export function TestimonialsSection() {
   const [active, setActive] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
   const ref = useRef<HTMLElement>(null)
   const inView = useInView(ref, { once: true, margin: '-100px' })
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Auto-advance carousel on mobile
+  useEffect(() => {
+    if (!isMobile) return
+    const timer = setTimeout(() => {
+      setActive((prev) => (prev + 1) % testimonials.length)
+    }, 6000)
+    return () => clearTimeout(timer)
+  }, [active, isMobile])
+
+  const handlePrev = () => setActive((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+  const handleNext = () => setActive((prev) => (prev + 1) % testimonials.length)
 
   return (
     <section
@@ -54,9 +76,9 @@ export function TestimonialsSection() {
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16 items-start">
-          {/* Quote display */}
-          <div className="lg:col-span-2">
+        {/* Mobile Carousel */}
+        {isMobile && (
+          <div className="flex flex-col gap-8 lg:hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={active}
@@ -66,12 +88,12 @@ export function TestimonialsSection() {
                 transition={{ duration: 0.5, ease: 'easeOut' }}
               >
                 <p
-                  className="font-serif font-light text-foreground leading-relaxed mb-10"
-                  style={{ fontSize: 'clamp(1.3rem, 3vw, 2rem)' }}
+                  className="font-serif font-light text-foreground leading-relaxed mb-6"
+                  style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)' }}
                 >
                   &ldquo;{testimonials[active].quote}&rdquo;
                 </p>
-                <div>
+                <div className="mb-8">
                   <p className="font-serif font-medium text-foreground text-lg">
                     {testimonials[active].author}
                   </p>
@@ -79,42 +101,110 @@ export function TestimonialsSection() {
                     {testimonials[active].detail}
                   </p>
                 </div>
+
+                {/* Mobile carousel controls */}
+                <div className="flex items-center justify-between gap-4">
+                  <button
+                    onClick={handlePrev}
+                    className="p-2 border border-border hover:bg-background transition-all duration-200"
+                    aria-label="Previous testimonial"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-foreground" />
+                  </button>
+
+                  {/* Dot indicators */}
+                  <div className="flex items-center justify-center gap-2">
+                    {testimonials.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setActive(i)}
+                        className={`h-2 transition-all duration-300 ${
+                          i === active
+                            ? 'w-8 bg-accent'
+                            : 'w-2 bg-border hover:bg-muted-foreground'
+                        }`}
+                        aria-label={`Go to testimonial ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleNext}
+                    className="p-2 border border-border hover:bg-background transition-all duration-200"
+                    aria-label="Next testimonial"
+                  >
+                    <ChevronRight className="w-5 h-5 text-foreground" />
+                  </button>
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
+        )}
 
-          {/* Navigation */}
-          <div className="flex flex-row lg:flex-col gap-4">
-            {testimonials.map((t, i) => (
-              <button
-                key={i}
-                onClick={() => setActive(i)}
-                className={`group flex items-center gap-4 text-left p-4 border transition-all duration-300 ${
-                  active === i
-                    ? 'border-foreground bg-background'
-                    : 'border-transparent hover:border-border'
-                }`}
-                aria-label={`View testimonial from ${t.author}`}
-              >
-                <div
-                  className={`w-1 self-stretch transition-colors duration-300 ${
-                    active === i ? 'bg-accent' : 'bg-transparent'
+        {/* Desktop Layout */}
+        {!isMobile && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16 items-start hidden lg:grid">
+            {/* Quote display */}
+            <div className="lg:col-span-2">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={active}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                >
+                  <p
+                    className="font-serif font-light text-foreground leading-relaxed mb-10"
+                    style={{ fontSize: 'clamp(1.3rem, 3vw, 2rem)' }}
+                  >
+                    &ldquo;{testimonials[active].quote}&rdquo;
+                  </p>
+                  <div>
+                    <p className="font-serif font-medium text-foreground text-lg">
+                      {testimonials[active].author}
+                    </p>
+                    <p className="font-sans text-xs text-muted-foreground tracking-[0.15em] uppercase mt-1">
+                      {testimonials[active].detail}
+                    </p>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex flex-row lg:flex-col gap-4">
+              {testimonials.map((t, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  className={`group flex items-center gap-4 text-left p-4 border transition-all duration-300 ${
+                    active === i
+                      ? 'border-foreground bg-background'
+                      : 'border-transparent hover:border-border'
                   }`}
-                />
-                <div className="min-w-0">
-                  <p className={`font-serif text-sm font-medium transition-colors duration-300 ${
-                    active === i ? 'text-foreground' : 'text-muted-foreground'
-                  }`}>
-                    {t.author.split(' & ')[0]}
-                  </p>
-                  <p className="font-sans text-xs text-muted-foreground/70 tracking-wide mt-0.5 truncate">
-                    {t.detail}
-                  </p>
-                </div>
-              </button>
-            ))}
+                  aria-label={`View testimonial from ${t.author}`}
+                >
+                  <div
+                    className={`w-1 self-stretch transition-colors duration-300 ${
+                      active === i ? 'bg-accent' : 'bg-transparent'
+                    }`}
+                  />
+                  <div className="min-w-0">
+                    <p className={`font-serif text-sm font-medium transition-colors duration-300 ${
+                      active === i ? 'text-foreground' : 'text-muted-foreground'
+                    }`}>
+                      {t.author.split(' & ')[0]}
+                    </p>
+                    <p className="font-sans text-xs text-muted-foreground/70 tracking-wide mt-0.5 truncate">
+                      {t.detail}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   )

@@ -384,9 +384,7 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                         { Icon: Calendar,    label: 'Event Date', value: activeBooking.event?.eventDate ?? '—' },
                         { Icon: Clock,       label: 'Time',       value: activeBooking.event?.eventTime ?? '—' },
                         { Icon: MapPin,      label: 'Location',   value: activeBooking.event?.location  ?? '—' },
-                        { Icon: Clock,       label: 'Duration',   value: activeBooking.event?.duration  ?? '—' },
                         { Icon: IndianRupee, label: 'Budget Hint', value: activeBooking.financials?.paymentNotes ?? '—' },
-                        { Icon: Users,       label: 'Guests',     value: activeBooking.event?.guestCount?.toString() ?? '—' },
                       ].map(({ Icon, label, value }) => (
                         <div key={label} className="flex items-start gap-3">
                           <Icon size={13} className="text-muted-foreground mt-0.5 shrink-0" />
@@ -419,23 +417,43 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
 
                     {/* Pricing — from booking_financials */}
                     {activeBooking.financials?.totalAmount && (
-                      <div className="px-6 py-4 flex items-center justify-between">
-                        <div>
-                          <p className={`${labelClass} mb-1`}>Total Amount</p>
-                          <p className="font-serif text-xl text-foreground">
-                            ₹{parseFloat(activeBooking.financials.totalAmount).toLocaleString('en-IN')}
-                          </p>
-                          {activeBooking.financials.depositAmount && (
-                            <p className="font-sans text-xs text-muted-foreground mt-0.5">
-                              Deposit: ₹{parseFloat(activeBooking.financials.depositAmount).toLocaleString('en-IN')}
+                      <div className="px-6 py-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className={`${labelClass} mb-1`}>Total Amount</p>
+                            <p className="font-serif text-xl text-foreground">
+                              ₹{parseFloat(activeBooking.financials.totalAmount).toLocaleString('en-IN')}
                             </p>
+                          </div>
+                          {activeBooking.financials.depositPaid && (
+                            <span className="font-sans text-[10px] tracking-[0.1em] uppercase text-emerald-700 border border-emerald-200 bg-emerald-50 px-3 py-1.5">
+                              Deposit Paid
+                            </span>
                           )}
                         </div>
-                        {activeBooking.financials.depositPaid && (
-                          <span className="font-sans text-[10px] tracking-[0.1em] uppercase text-emerald-700 border border-emerald-200 bg-emerald-50 px-3 py-1.5">
-                            Deposit Paid
-                          </span>
-                        )}
+
+                        {/* Deposit breakdown */}
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-border">
+                          {activeBooking.financials.depositAmount && (
+                            <div>
+                              <p className={`${labelClass} mb-1`}>Deposit Amount</p>
+                              <p className="font-serif text-lg text-foreground">
+                                ₹{parseFloat(activeBooking.financials.depositAmount).toLocaleString('en-IN')}
+                              </p>
+                            </div>
+                          )}
+                          <div>
+                            <p className={`${labelClass} mb-1`}>Balance to Pay</p>
+                            <p className="font-serif text-lg text-foreground">
+                              ₹{(() => {
+                                const total = parseFloat(activeBooking.financials.totalAmount || '0')
+                                const paid = activeBooking.financials.depositPaid ? parseFloat(activeBooking.financials.depositAmount || '0') : 0
+                                const balance = total - paid
+                                return balance.toLocaleString('en-IN')
+                              })()}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </motion.div>

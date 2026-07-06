@@ -93,7 +93,13 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
     router.refresh()
   }
 
-  const openBooking = (b: FullBooking) => {
+  const toggleBooking = (b: FullBooking) => {
+    // If clicking the same booking again, close it
+    if (activeBooking?.id === b.id) {
+      setActiveBooking(null)
+      return
+    }
+    // Otherwise, open the clicked booking
     setActiveBooking(b)
     setTotalAmount(b.financials?.totalAmount?.toString() ?? '')
     setDepositAmount(b.financials?.depositAmount?.toString() ?? '')
@@ -394,7 +400,7 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
                   return (
                     <motion.button
                       key={b.id}
-                      onClick={() => openBooking(b)}
+                      onClick={() => toggleBooking(b)}
                       whileHover={{ x: 2 }}
                       className={`w-full text-left border p-4 transition-all duration-200 ${
                         isActive ? 'border-foreground bg-secondary' : 'border-border hover:border-foreground/40'
@@ -512,9 +518,7 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
                         { Icon: Calendar,    label: 'Date',     value: activeBooking.event?.eventDate ?? '—' },
                         { Icon: Clock,       label: 'Time',     value: activeBooking.event?.eventTime ?? '—' },
                         { Icon: MapPin,      label: 'Location', value: activeBooking.event?.location  ?? '—' },
-                        { Icon: Clock,       label: 'Duration', value: activeBooking.event?.duration  ?? '—' },
                         { Icon: IndianRupee, label: 'Budget',   value: activeBooking.financials?.paymentNotes ?? '—' },
-                        { Icon: Users,       label: 'Guests',   value: activeBooking.event?.guestCount?.toString() ?? '—' },
                       ].map(({ Icon, label, value }) => (
                         <div key={label} className="flex items-start gap-2">
                           <Icon size={12} className="text-muted-foreground mt-0.5 shrink-0" />
@@ -532,10 +536,7 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
                         <p className={labelClass}>How Heard</p>
                         <p className="font-sans text-sm text-foreground">{activeBooking.event?.howHeard ?? '—'}</p>
                       </div>
-                      <div>
-                        <p className={labelClass}>Theme</p>
-                        <p className="font-sans text-sm text-foreground">{activeBooking.event?.shootTheme ?? '—'}</p>
-                      </div>
+
                       {activeBooking.event?.venue && (
                         <div>
                           <p className={labelClass}>Venue</p>
