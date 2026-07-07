@@ -4,12 +4,22 @@ import { BlogGrid } from '@/components/blog/blog-grid'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Journal — Studio AYNSH',
+  title: 'Photography Blog & Journal | Studio AYNSH Insights',
   description:
-    'Photography insights, behind-the-scenes stories, and expert guides from Studio AYNSH. Explore tips on weddings, portraits, lighting, and more.',
+    'Photography insights, behind-the-scenes stories, and expert guides from Studio AYNSH. Explore tips on weddings, portraits, lighting, cinematography, and more.',
+  keywords: [
+    'photography blog',
+    'photography tips',
+    'wedding photography guides',
+    'portrait photography',
+    'photography tutorials',
+    'behind the scenes',
+  ],
   openGraph: {
-    title: 'Journal — Studio AYNSH',
-    description: 'Photography insights and expert guides from Studio AYNSH.',
+    title: 'Photography Blog & Journal | Studio AYNSH Insights',
+    description:
+      'Photography insights, behind-the-scenes stories, and expert guides from Studio AYNSH.',
+    url: 'https://studioaynsh.com/blog',
     type: 'website',
   },
 }

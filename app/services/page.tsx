@@ -4,9 +4,25 @@ import { ServicesContent } from '@/components/services/services-content'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Services',
+  title: 'Photography & Cinematography Services',
   description:
     'Studio AYNSH offers premium photography and cinematography services — wedding, pre-wedding, portrait, fashion, drone, commercial photography in Gorakhpur and across India.',
+  keywords: [
+    'photography services',
+    'wedding photography',
+    'pre-wedding shoots',
+    'portrait photography',
+    'fashion photography',
+    'drone photography',
+    'cinematography',
+    'commercial photography',
+  ],
+  openGraph: {
+    title: 'Photography & Cinematography Services | Studio AYNSH',
+    description:
+      'Professional photography services including wedding, portrait, fashion, and drone photography across India.',
+    url: 'https://studioaynsh.com/services',
+  },
 }
 
 export default function ServicesPage() {
