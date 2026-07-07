@@ -4,9 +4,16 @@ import { StudioMap } from '@/components/studio-map'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Contact',
+  title: 'Contact Studio AYNSH | Book Your Photography Session',
   description:
-    'Contact Studio AYNSH — reach Praveen Gupta for bookings, enquiries, or collaborations.',
+    'Contact Studio AYNSH in Gorakhpur for bookings, enquiries, or collaborations. Reach Praveen Gupta for premium photography and cinematography services.',
+  keywords: ['contact studio', 'photography booking', 'Studio AYNSH contact', 'Gorakhpur'],
+  openGraph: {
+    title: 'Contact Studio AYNSH | Book Your Photography Session',
+    description:
+      'Get in touch with Studio AYNSH for bookings, enquiries, or collaboration opportunities.',
+    url: 'https://studioaynsh.com/contact',
+  },
 }
 
 export default function ContactPage() {

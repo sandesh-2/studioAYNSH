@@ -4,9 +4,23 @@ import { Navigation } from '@/components/navigation'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Portfolio',
+  title: 'Photography Portfolio | Studio AYNSH',
   description:
-    'Browse Studio AYNSH\'s portfolio — wedding, pre-wedding, portrait, fashion, drone, and commercial photography from across India.',
+    'Browse Studio AYNSH\'s portfolio — wedding, pre-wedding, portrait, fashion, drone, and commercial photography from across India. Premium luxury photography showcase.',
+  keywords: [
+    'photography portfolio',
+    'wedding photos',
+    'portrait gallery',
+    'fashion photography',
+    'drone photography',
+    'commercial photography',
+  ],
+  openGraph: {
+    title: 'Photography Portfolio | Studio AYNSH',
+    description:
+      'Explore our premium luxury photography portfolio featuring wedding, portrait, fashion, and commercial photography.',
+    url: 'https://studioaynsh.com/portfolio',
+  },
 }
 
 export default function PortfolioPage() {
