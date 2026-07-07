@@ -1,5 +1,6 @@
 'use client'
 
+import { checkDuplicateEmailOrPhone } from '@/lib/actions/check-duplicates'
 import { authClient } from '@/lib/auth-client'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
@@ -37,12 +38,21 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
       }
 
       if (mode === 'sign-up') {
+        // Check for duplicate email or phone number
+        const trimmedEmail = email.trim().toLowerCase()
+        const trimmedPhone = phone.trim()
+        
+        const duplicationCheck = await checkDuplicateEmailOrPhone(trimmedEmail, trimmedPhone || undefined)
+        if (duplicationCheck.isDuplicate) {
+          throw new Error(duplicationCheck.message || 'Email or phone number is already registered.')
+        }
+
         const res = await authClient.signUp.email({
           name: name.trim().slice(0, 120),
-          email: email.trim().toLowerCase(),
+          email: trimmedEmail,
           password,
           callbackURL: redirectTo,
-          ...(phone.trim() && { phone: phone.trim().slice(0, 20) }),
+          ...(trimmedPhone && { phone: trimmedPhone.slice(0, 20) }),
         } as Parameters<typeof authClient.signUp.email>[0])
         if (res.error) throw new Error(res.error.message)
       } else {
