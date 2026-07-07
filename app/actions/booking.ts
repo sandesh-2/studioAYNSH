@@ -150,8 +150,8 @@ export async function createBooking(input: BookingInput) {
         guestCount: input.guestCount ?? null, shootTheme: input.shootTheme ?? null,
         specialRequests: input.specialRequests ?? null, howHeard: input.howHeard ?? null,
       }),
-    ]).catch((err) => {
-      console.error('[v0] Email notification failed (non-blocking):', err)
+    ]).catch((_err) => {
+      // Email notification failed - non-blocking, booking still succeeds
     })
 
     revalidatePath('/portal')
@@ -160,7 +160,7 @@ export async function createBooking(input: BookingInput) {
     return { success: true, bookingId }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to create booking'
-    console.error('[v0] createBooking error:', message)
+    // Error logged in database audit trail, return to client
     return { success: false, error: message }
   }
 }

@@ -61,7 +61,7 @@ export const metadata: Metadata = {
       'Premium luxury photography and cinematography studio. Every image is a chapter of an untold story.',
     images: [
       {
-        url: '/og-image.jpg',
+        url: 'https://studioaynsh.com/api/og?title=Studio%20AYNSH',
         width: 1200,
         height: 630,
         alt: 'Studio AYNSH - Premium Photography',
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
     title: 'Studio AYNSH — We Capture The Untold Story',
     description: 'Premium luxury photography and cinematography studio.',
     creator: '@studioaynsh',
-    images: ['/twitter-image.jpg'],
+    images: ['https://studioaynsh.com/api/og?title=Studio%20AYNSH'],
   },
   verification: {
     google: 'google-site-verification-code-here',
@@ -117,9 +117,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Studio AYNSH" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
         <meta name="msapplication-TileColor" content="#f7f3ee" />
-        <meta name="msapplication-config" content="/browserconfig.xml" />
         <link rel="canonical" href="https://studioaynsh.com" />
         <LocalBusinessSchema />
       </head>

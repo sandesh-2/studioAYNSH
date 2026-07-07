@@ -6,7 +6,7 @@ export function LocalBusinessSchema() {
     name: 'Studio AYNSH',
     description:
       'Premium luxury photography and cinematography studio specializing in wedding, portrait, fashion, and commercial photography.',
-    image: 'https://studioaynsh.com/og-image.jpg',
+    image: 'https://studioaynsh.com/api/og?title=Studio%20AYNSH',
     url: 'https://studioaynsh.com',
     telephone: '+91-9956976596',
     email: 'mr.p3124@protonmail.com',

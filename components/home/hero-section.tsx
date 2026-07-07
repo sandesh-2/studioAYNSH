@@ -48,8 +48,8 @@ export function HeroSection() {
       >
         {/* Eyebrow */}
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
           className="font-sans text-xs font-medium tracking-[0.3em] uppercase text-background/60 mb-6"
         >
@@ -58,9 +58,9 @@ export function HeroSection() {
 
         {/* Headline */}
         <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
+          initial={{ opacity: 0, y: 40, rotateX: 20, perspective: 1000 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ duration: 0.9, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="font-serif font-light text-background leading-none mb-8"
           style={{ fontSize: 'clamp(3rem, 9vw, 8rem)' }}
         >
@@ -73,24 +73,35 @@ export function HeroSection() {
 
         {/* CTA row */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
+          initial={{ opacity: 0, y: 30, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="flex flex-col sm:flex-row items-start sm:items-center gap-6"
         >
-          <Link
-            href="/portfolio"
-            className="inline-flex items-center justify-center px-8 py-3.5 bg-background text-foreground text-xs font-sans font-medium tracking-[0.18em] uppercase hover:bg-accent transition-all duration-300"
+          <motion.div
+            whileHover={{ y: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
           >
-            View Portfolio
-          </Link>
-          <Link
-            href="/booking"
-            className="inline-flex items-center gap-3 text-xs font-sans font-medium tracking-[0.18em] uppercase text-background/70 hover:text-background transition-colors duration-300 group"
+            <Link
+              href="/portfolio"
+              className="inline-flex items-center justify-center px-8 py-3.5 bg-background text-foreground text-xs font-sans font-medium tracking-[0.18em] uppercase hover:bg-accent transition-all duration-300 shadow-lg hover:shadow-xl"
+            >
+              View Portfolio
+            </Link>
+          </motion.div>
+          <motion.div
+            whileHover={{ x: 6 }}
+            transition={{ duration: 0.3 }}
           >
-            <span className="w-8 h-px bg-background/50 group-hover:w-12 group-hover:bg-background transition-all duration-400" />
-            Book a Session
-          </Link>
+            <Link
+              href="/booking"
+              className="inline-flex items-center gap-3 text-xs font-sans font-medium tracking-[0.18em] uppercase text-background/70 hover:text-background transition-colors duration-300 group"
+            >
+              <span className="w-8 h-px bg-background/50 group-hover:w-12 group-hover:bg-background transition-all duration-400" />
+              Book a Session
+            </Link>
+          </motion.div>
         </motion.div>
       </motion.div>
 

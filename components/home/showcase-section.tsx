@@ -51,9 +51,10 @@ function ShowcaseItem({
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, delay: index * 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
+      initial={{ opacity: 0, y: 50, rotateY: -15, perspective: 1000 }}
+      animate={inView ? { opacity: 1, y: 0, rotateY: 0 } : {}}
+      whileHover={{ y: -8, rotateY: 5 }}
+      transition={{ duration: 0.8, delay: index * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="group relative overflow-hidden cursor-pointer"
     >
       <div

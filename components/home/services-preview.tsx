@@ -59,13 +59,18 @@ export function ServicesPreview() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
+            initial={{ opacity: 0, y: 40, rotateX: 10, perspective: 1000 }}
+            animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
+            transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <p className="font-sans text-xs font-medium tracking-[0.3em] uppercase text-muted-foreground mb-4">
+            <motion.p
+              initial={{ opacity: 0, filter: 'blur(8px)' }}
+              animate={inView ? { opacity: 1, filter: 'blur(0px)' } : {}}
+              transition={{ duration: 0.7, delay: 0.1 }}
+              className="font-sans text-xs font-medium tracking-[0.3em] uppercase text-muted-foreground mb-4"
+            >
               What We Offer
-            </p>
+            </motion.p>
             <h2
               className="font-serif font-light text-foreground leading-tight"
               style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}
@@ -96,9 +101,10 @@ export function ServicesPreview() {
           {services.map((service, i) => (
             <motion.div
               key={service.number}
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: i * 0.08 + 0.2 }}
+              initial={{ opacity: 0, y: 30, rotateZ: -1 }}
+              animate={inView ? { opacity: 1, y: 0, rotateZ: 0 } : {}}
+              whileHover={{ x: 8 }}
+              transition={{ duration: 0.6, delay: i * 0.08 + 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
               <Link
                 href={service.href}
