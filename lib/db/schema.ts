@@ -21,7 +21,7 @@ export const user = pgTable('user', {
   emailVerified: boolean('emailVerified').notNull().default(false),
   image:         text('image'),
   role:          text('role').notNull().default('client'),  // client | admin
-  phone:         text('phone'),
+  phone:         text('phone').unique(),
   createdAt:     timestamp('createdAt').notNull().defaultNow(),
   updatedAt:     timestamp('updatedAt').notNull().defaultNow(),
 })
