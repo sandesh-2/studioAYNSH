@@ -1,12 +1,14 @@
 import {
   boolean,
   date,
+  index,
   jsonb,
   numeric,
   pgTable,
   smallint,
   text,
   timestamp,
+  unique,
 } from 'drizzle-orm/pg-core'
 
 // Drizzle does not export `timestamptz` — use `timestamp` with { withTimezone: true }.
@@ -24,7 +26,10 @@ export const user = pgTable('user', {
   phone:         text('phone').unique(),
   createdAt:     timestamp('createdAt').notNull().defaultNow(),
   updatedAt:     timestamp('updatedAt').notNull().defaultNow(),
-})
+}, (t) => [
+  index('idx_user_role').on(t.role),
+  index('idx_user_createdAt').on(t.createdAt),
+])
 
 export const session = pgTable('session', {
   id:         text('id').primaryKey(),
@@ -35,7 +40,10 @@ export const session = pgTable('session', {
   ipAddress:  text('ipAddress'),
   userAgent:  text('userAgent'),
   userId:     text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
-})
+}, (t) => [
+  index('idx_session_userId').on(t.userId),
+  index('idx_session_expiresAt').on(t.expiresAt),
+])
 
 export const account = pgTable('account', {
   id:                      text('id').primaryKey(),
@@ -88,14 +96,19 @@ export const bookingV2 = pgTable('booking_v2', {
   confirmedAt:   timestamptz('confirmedAt'),
   createdAt:     timestamptz('createdAt').notNull().defaultNow(),
   updatedAt:     timestamptz('updatedAt').notNull().defaultNow(),
-})
+}, (t) => [
+  index('idx_booking_userId').on(t.userId),
+  index('idx_booking_status').on(t.status),
+  index('idx_booking_createdAt').on(t.createdAt),
+  index('idx_booking_userId_status').on(t.userId, t.status),
+])
 
 // ── Event / shoot details ────────────────────────────────────────────────────
 // One-to-one with booking_v2 (cascade delete).
 
 export const bookingEvent = pgTable('booking_event', {
   id:              text('id').primaryKey(),
-  bookingId:       text('bookingId').notNull().references(() => bookingV2.id, { onDelete: 'cascade' }),
+  bookingId:       text('bookingId').notNull().unique().references(() => bookingV2.id, { onDelete: 'cascade' }),
 
   eventDate:       date('eventDate').notNull(),    // stored as DATE, not text
   eventTime:       text('eventTime'),              // HH:MM user-entered string
@@ -109,7 +122,10 @@ export const bookingEvent = pgTable('booking_event', {
 
   createdAt:       timestamptz('createdAt').notNull().defaultNow(),
   updatedAt:       timestamptz('updatedAt').notNull().defaultNow(),
-})
+}, (t) => [
+  index('idx_event_eventDate').on(t.eventDate),
+  index('idx_event_location').on(t.location),
+])
 
 // ── Financials ───────────────────────────────────────────────────────────────
 // One-to-one with booking_v2. Amounts stored as NUMERIC(12,2).
@@ -139,7 +155,11 @@ export const bookingNote = pgTable('booking_note', {
   authorId:  text('authorId').notNull().references(() => user.id, { onDelete: 'restrict' }),
   content:   text('content').notNull(),
   createdAt: timestamptz('createdAt').notNull().defaultNow(),
-})
+}, (t) => [
+  index('idx_note_bookingId').on(t.bookingId),
+  index('idx_note_authorId').on(t.authorId),
+  index('idx_note_createdAt').on(t.createdAt),
+])
 
 // ── Immutable audit / activity log ───────────────────────────────────────────
 // Every status change, progress update, financial edit, and note addition is
@@ -157,7 +177,12 @@ export const bookingActivityLog = pgTable('booking_activity_log', {
   newValue:      text('newValue'),
   metadata:      jsonb('metadata'),
   createdAt:     timestamptz('createdAt').notNull().defaultNow(),
-})
+}, (t) => [
+  index('idx_actlog_bookingId').on(t.bookingId),
+  index('idx_actlog_actorId').on(t.actorId),
+  index('idx_actlog_createdAt').on(t.createdAt),
+  index('idx_actlog_eventType').on(t.eventType),
+])
 
 // ── Inferred types ────────────────────────────────────────────────────────────
 
