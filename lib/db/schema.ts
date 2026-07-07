@@ -8,7 +8,6 @@ import {
   smallint,
   text,
   timestamp,
-  unique,
 } from 'drizzle-orm/pg-core'
 
 // Drizzle does not export `timestamptz` — use `timestamp` with { withTimezone: true }.

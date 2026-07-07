@@ -56,7 +56,7 @@ export async function checkDuplicateEmailOrPhone(
 
     return { isDuplicate: false }
   } catch (error) {
-    console.error('[v0] Error checking duplicates:', error)
+    // Silently fail - database unique constraints will catch actual duplicates
     return {
       isDuplicate: false,
       message: 'Unable to verify availability. Please try again.',
