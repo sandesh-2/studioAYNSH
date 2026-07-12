@@ -9,12 +9,13 @@ import {
 import { signOut } from '@/lib/auth-client'
 import { PROGRESS_STAGES, SERVICE_LABELS, type ProgressStageKey, type FullBooking } from '@/lib/db/schema'
 import type { User } from '@/lib/db/schema'
+import { BookingsCalendar } from '@/components/booking/bookings-calendar'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Calendar, MapPin, Clock, IndianRupee, Users, LogOut,
   ChevronRight, CheckCircle, XCircle, AlertCircle, Search,
   Loader2, Edit3, Save, SlidersHorizontal, ArrowUpDown, ChevronDown,
-  MessageSquarePlus,
+  MessageSquarePlus, LayoutGrid, List,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -39,15 +40,17 @@ const STATUS_CONFIG = {
 const ALL_SERVICES = Object.keys(SERVICE_LABELS)
 const STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'] as const
 type SortMode = 'newest' | 'oldest' | 'custom'
-type Tab = 'bookings' | 'clients'
+type Tab = 'bookings' | 'clients' | 'calendar'
+type ViewMode = 'list' | 'calendar'
 
 interface Props {
   bookings: FullBooking[]
   clients: User[]
   adminName: string
+  calendarBookings?: Array<{ bookingId: string; date: string; service: string; clientName: string }>
 }
 
-export function AdminDashboard({ bookings: initial, clients, adminName }: Props) {
+export function AdminDashboard({ bookings: initial, clients, adminName, calendarBookings = [] }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('bookings')
   const [bookings, setBookings] = useState(initial)
@@ -60,6 +63,7 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
   const [dateTo, setDateTo] = useState('')
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const sortRef = useRef<HTMLDivElement>(null)
   const filterRef = useRef<HTMLDivElement>(null)
 
@@ -255,10 +259,10 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
 
         {/* Tabs */}
         <div className="flex border-b border-border">
-          {(['bookings', 'clients'] as const).map((t) => (
+          {(['bookings', 'clients', 'calendar'] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); setViewMode('list') }}
               className={`font-sans text-xs tracking-[0.15em] uppercase px-6 py-3 border-b-2 transition-all duration-200 capitalize ${
                 tab === t ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
@@ -701,6 +705,113 @@ export function AdminDashboard({ bookings: initial, clients, adminName }: Props)
                 </p>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Calendar tab */}
+        {tab === 'calendar' && (
+          <div className="space-y-6">
+            {/* View toggle for calendar tab */}
+            {calendarBookings.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`inline-flex items-center gap-2 px-4 py-2 font-sans text-xs font-medium tracking-[0.12em] uppercase transition-all duration-200 ${
+                    viewMode === 'list'
+                      ? 'bg-foreground text-background'
+                      : 'border border-border text-foreground hover:border-foreground'
+                  }`}
+                >
+                  <List size={14} />
+                  List View
+                </button>
+                <button
+                  onClick={() => setViewMode('calendar')}
+                  className={`inline-flex items-center gap-2 px-4 py-2 font-sans text-xs font-medium tracking-[0.12em] uppercase transition-all duration-200 ${
+                    viewMode === 'calendar'
+                      ? 'bg-foreground text-background'
+                      : 'border border-border text-foreground hover:border-foreground'
+                  }`}
+                >
+                  <LayoutGrid size={14} />
+                  Calendar View
+                </button>
+              </div>
+            )}
+
+            {/* Calendar display */}
+            <BookingsCalendar bookings={calendarBookings} isAdmin={true} />
+
+            {/* Multi-booking list view for dates with multiple bookings */}
+            {viewMode === 'list' && calendarBookings.length > 0 && (
+              <div className="mt-6 space-y-4">
+                <h3 className="font-serif text-lg text-foreground">Bookings by Date</h3>
+                {(() => {
+                  // Group bookings by date
+                  const groupedByDate = new Map<string, typeof calendarBookings>()
+                  calendarBookings.forEach((b) => {
+                    if (!groupedByDate.has(b.date)) {
+                      groupedByDate.set(b.date, [])
+                    }
+                    groupedByDate.get(b.date)!.push(b)
+                  })
+
+                  // Show only dates with multiple bookings
+                  const datesWithMultiple = Array.from(groupedByDate.entries())
+                    .filter(([_, bookings]) => bookings.length > 1)
+                    .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
+
+                  if (datesWithMultiple.length === 0) {
+                    return (
+                      <p className="font-sans text-sm text-muted-foreground text-center py-6">
+                        No dates with multiple bookings. All dates have 1 or 0 bookings.
+                      </p>
+                    )
+                  }
+
+                  return (
+                    <div className="space-y-6">
+                      {datesWithMultiple.map(([date, dateBookings]) => (
+                        <div key={date} className="border border-border p-4">
+                          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
+                            <Calendar size={16} className="text-accent" />
+                            <h4 className="font-sans text-sm font-medium text-foreground">
+                              {new Date(date + 'T00:00:00').toLocaleDateString('en-IN', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                weekday: 'long',
+                              })}
+                            </h4>
+                            <span className="ml-auto font-sans text-xs text-muted-foreground">
+                              {dateBookings.length} booking{dateBookings.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <div className="space-y-2">
+                            {dateBookings.map((booking, i) => (
+                              <div key={booking.bookingId} className="flex items-start gap-3 text-sm">
+                                <span className="font-sans font-medium text-muted-foreground w-6">{i + 1}.</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-sans font-medium text-foreground truncate">
+                                    {booking.clientName}
+                                  </p>
+                                  <p className="font-sans text-xs text-muted-foreground">
+                                    {SERVICE_LABELS[booking.service] || booking.service}
+                                  </p>
+                                </div>
+                                <span className="font-sans text-xs text-accent font-medium shrink-0">
+                                  ID: {booking.bookingId.slice(0, 8).toUpperCase()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
           </div>
         )}
 

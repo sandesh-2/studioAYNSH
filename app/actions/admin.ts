@@ -109,6 +109,29 @@ export async function getAllClients() {
   return db.select().from(user).orderBy(desc(user.createdAt))
 }
 
+// ── Calendar view ──────────────────────────────────────────────────────────
+
+export async function getAllBookingsForCalendar() {
+  await requireAdmin()
+
+  const events = await db.select().from(bookingEvent)
+  const bookings = await db.select().from(bookingV2)
+
+  const bookingsMap = new Map(bookings.map((b) => [b.id, b]))
+
+  return events
+    .filter((e) => e.eventDate && e.bookingId)
+    .map((e) => {
+      const booking = bookingsMap.get(e.bookingId)
+      return {
+        bookingId: e.bookingId,
+        date: e.eventDate,
+        service: booking?.service || 'other',
+        clientName: booking?.clientName || 'Unknown',
+      }
+    })
+}
+
 // ── Status update ──────────────────────────────────────────────────────────
 
 const VALID_STATUSES = new Set(['pending', 'confirmed', 'completed', 'cancelled'])

@@ -22,6 +22,30 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [passwordFocused, setPasswordFocused] = useState(false)
+
+  // Calculate password strength
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return { score: 0, label: '', color: '' }
+    let score = 0
+    if (pwd.length >= 8) score++
+    if (pwd.length >= 12) score++
+    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++
+    if (/\d/.test(pwd)) score++
+    if (/[^a-zA-Z\d]/.test(pwd)) score++
+    
+    const levels = [
+      { score: 0, label: '', color: '' },
+      { score: 1, label: 'Weak', color: 'text-destructive' },
+      { score: 2, label: 'Fair', color: 'text-orange-500' },
+      { score: 3, label: 'Good', color: 'text-yellow-500' },
+      { score: 4, label: 'Strong', color: 'text-green-500' },
+      { score: 5, label: 'Very Strong', color: 'text-green-600' },
+    ]
+    return levels[Math.min(score, 5)]
+  }
+
+  const strength = getPasswordStrength(password)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -145,15 +169,25 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
           </div>
 
           <div>
-            <label className={labelClass}>Password</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className={labelClass}>Password</label>
+              {mode === 'sign-up' && password && (
+                <span className={`font-sans text-xs font-medium ${strength.color}`}>
+                  {strength.label}
+                </span>
+              )}
+            </div>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
                 placeholder={mode === 'sign-up' ? 'At least 8 characters' : 'Your password'}
                 required
                 minLength={8}
+                autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'}
                 className={`${inputClass} pr-10`}
               />
               <button
@@ -165,6 +199,23 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
+            {/* Password strength hints */}
+            {mode === 'sign-up' && (password || passwordFocused) && (
+              <div className="mt-2 space-y-1 text-xs text-muted-foreground/70">
+                <p className={password.length >= 8 ? 'text-green-600' : ''}>
+                  {password.length >= 8 ? '✓' : '○'} At least 8 characters
+                </p>
+                <p className={/[a-z]/.test(password) && /[A-Z]/.test(password) ? 'text-green-600' : ''}>
+                  {/[a-z]/.test(password) && /[A-Z]/.test(password) ? '✓' : '○'} Mix of uppercase and lowercase
+                </p>
+                <p className={/\d/.test(password) ? 'text-green-600' : ''}>
+                  {/\d/.test(password) ? '✓' : '○'} At least one number
+                </p>
+                <p className={/[^a-zA-Z\d]/.test(password) ? 'text-green-600' : ''}>
+                  {/[^a-zA-Z\d]/.test(password) ? '✓' : '○'} Special character (!@#$%^&*)
+                </p>
+              </div>
+            )}
           </div>
 
           {error && (
