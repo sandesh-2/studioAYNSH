@@ -22,12 +22,17 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  // Calculate max date: 5 months from today
+  const maxDate = new Date(today)
+  maxDate.setMonth(maxDate.getMonth() + 5)
+
   const [open, setOpen] = useState(false)
   const [view, setView] = useState<{ year: number; month: number }>(() => {
     if (value) {
       const d = new Date(value + 'T00:00:00')
       return { year: d.getFullYear(), month: d.getMonth() }
     }
+    // Default to current month when opened
     return { year: today.getFullYear(), month: today.getMonth() }
   })
   const ref = useRef<HTMLDivElement>(null)
@@ -54,15 +59,29 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
   function prevMonth() {
     setView((v) => {
       const d = new Date(v.year, v.month - 1, 1)
+      // Prevent navigation before current month
+      if (d < today) return v
       return { year: d.getFullYear(), month: d.getMonth() }
     })
   }
   function nextMonth() {
     setView((v) => {
       const d = new Date(v.year, v.month + 1, 1)
+      // Prevent navigation beyond 5 months from now
+      if (d > maxDate) return v
       return { year: d.getFullYear(), month: d.getMonth() }
     })
   }
+
+  // Check if current view can navigate prev/next
+  const canGoPrev = (() => {
+    const d = new Date(view.year, view.month - 1, 1)
+    return d >= today
+  })()
+  const canGoNext = (() => {
+    const d = new Date(view.year, view.month + 1, 1)
+    return d <= maxDate
+  })()
 
   function selectDay(day: number) {
     const str = `${view.year}-${pad(view.month + 1)}-${pad(day)}`
@@ -73,6 +92,11 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
   function isPast(day: number) {
     const d = new Date(view.year, view.month, day)
     return d < today
+  }
+
+  function isFutureBeyondLimit(day: number) {
+    const d = new Date(view.year, view.month, day)
+    return d > maxDate
   }
 
   function isSelected(day: number) {
@@ -122,7 +146,12 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
               <button
                 type="button"
                 onClick={prevMonth}
-                className="p-1 text-muted-foreground hover:text-foreground transition-colors duration-150"
+                disabled={!canGoPrev}
+                className={`p-1 transition-colors duration-150 ${
+                  canGoPrev
+                    ? 'text-muted-foreground hover:text-foreground cursor-pointer'
+                    : 'text-muted-foreground/30 cursor-not-allowed'
+                }`}
                 aria-label="Previous month"
               >
                 <ChevronLeft size={16} />
@@ -133,7 +162,12 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
               <button
                 type="button"
                 onClick={nextMonth}
-                className="p-1 text-muted-foreground hover:text-foreground transition-colors duration-150"
+                disabled={!canGoNext}
+                className={`p-1 transition-colors duration-150 ${
+                  canGoNext
+                    ? 'text-muted-foreground hover:text-foreground cursor-pointer'
+                    : 'text-muted-foreground/30 cursor-not-allowed'
+                }`}
                 aria-label="Next month"
               >
                 <ChevronRight size={16} />
@@ -154,19 +188,21 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
               {cells.map((day, i) => {
                 if (!day) return <div key={i} />
                 const past = isPast(day)
+                const future = isFutureBeyondLimit(day)
+                const disabled = past || future
                 const sel = isSelected(day)
                 const tod = isToday(day)
                 return (
                   <button
                     key={i}
                     type="button"
-                    disabled={past}
+                    disabled={disabled}
                     onClick={() => selectDay(day)}
                     className={`h-8 w-full flex items-center justify-center font-sans text-sm transition-all duration-150 rounded-none
-                      ${past ? 'text-muted-foreground/30 cursor-not-allowed' : 'hover:bg-secondary cursor-pointer'}
+                      ${disabled ? 'text-muted-foreground/30 cursor-not-allowed' : 'hover:bg-secondary cursor-pointer'}
                       ${sel ? 'bg-foreground !text-background hover:bg-foreground' : ''}
                       ${tod && !sel ? 'text-accent font-medium underline underline-offset-2' : ''}
-                      ${!past && !sel ? 'text-foreground' : ''}
+                      ${!disabled && !sel ? 'text-foreground' : ''}
                     `}
                     aria-label={`${day} ${MONTHS[view.month]} ${view.year}`}
                   >

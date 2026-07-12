@@ -4,6 +4,7 @@ import { createBooking } from '@/app/actions/booking'
 import { CalendarPicker } from './calendar-picker'
 import { TimePicker } from './time-picker'
 import { CustomSelect } from './custom-select'
+import { SearchableSelect } from './searchable-select'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
@@ -38,7 +39,7 @@ const SERVICES = [
   { label: 'Other', value: 'other' },
 ]
 
-// All 28 states + 8 Union Territories of India
+// All 28 states of India (Union Territories removed)
 const INDIA_STATES = [
   { label: 'Andhra Pradesh',          value: 'Andhra Pradesh' },
   { label: 'Arunachal Pradesh',       value: 'Arunachal Pradesh' },
@@ -68,15 +69,6 @@ const INDIA_STATES = [
   { label: 'Uttar Pradesh',           value: 'Uttar Pradesh' },
   { label: 'Uttarakhand',             value: 'Uttarakhand' },
   { label: 'West Bengal',             value: 'West Bengal' },
-  // Union Territories
-  { label: 'Andaman & Nicobar Islands',       value: 'Andaman & Nicobar Islands' },
-  { label: 'Chandigarh',                      value: 'Chandigarh' },
-  { label: 'Dadra & Nagar Haveli and Daman & Diu', value: 'Dadra & Nagar Haveli and Daman & Diu' },
-  { label: 'Delhi (NCT)',                     value: 'Delhi (NCT)' },
-  { label: 'Jammu & Kashmir',                 value: 'Jammu & Kashmir' },
-  { label: 'Ladakh',                          value: 'Ladakh' },
-  { label: 'Lakshadweep',                     value: 'Lakshadweep' },
-  { label: 'Puducherry',                      value: 'Puducherry' },
 ]
 
 const BUDGETS = [
@@ -450,11 +442,12 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
                   {/* State dropdown */}
                   <div>
                     <label className={labelClass}>State</label>
-                    <CustomSelect
+                    <SearchableSelect
                       options={INDIA_STATES}
                       value={selectedState}
                       onChange={(v) => setValue('state', v, { shouldValidate: true })}
                       placeholder="Select state"
+                      searchPlaceholder="Search states..."
                       error={errors.state?.message}
                     />
                     {errors.state && (
