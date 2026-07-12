@@ -27,15 +27,25 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
   maxDate.setMonth(maxDate.getMonth() + 5)
 
   const [open, setOpen] = useState(false)
-  const [view, setView] = useState<{ year: number; month: number }>(() => {
-    if (value) {
-      const d = new Date(value + 'T00:00:00')
-      return { year: d.getFullYear(), month: d.getMonth() }
-    }
-    // Default to current month when opened
-    return { year: today.getFullYear(), month: today.getMonth() }
+  const [view, setView] = useState<{ year: number; month: number }>({
+    year: today.getFullYear(),
+    month: today.getMonth(),
   })
   const ref = useRef<HTMLDivElement>(null)
+
+  // When the picker opens, jump to the selected value's month (if any),
+  // otherwise always show the current month.
+  useEffect(() => {
+    if (open) {
+      if (value) {
+        const d = new Date(value + 'T00:00:00')
+        setView({ year: d.getFullYear(), month: d.getMonth() })
+      } else {
+        setView({ year: today.getFullYear(), month: today.getMonth() })
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -74,9 +84,11 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
   }
 
   // Check if current view can navigate prev/next
+  // Compare at month granularity only (no time component issues)
+  const todayMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
   const canGoPrev = (() => {
     const d = new Date(view.year, view.month - 1, 1)
-    return d >= today
+    return d >= todayMonthStart
   })()
   const canGoNext = (() => {
     const d = new Date(view.year, view.month + 1, 1)

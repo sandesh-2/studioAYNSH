@@ -3,6 +3,7 @@
 import { motion, useInView } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
+import { BookNowButton } from '@/components/booking/book-now-button'
 import { useRef } from 'react'
 
 const services = [
@@ -180,13 +181,12 @@ function ServiceCard({ service, index }: { service: typeof services[0]; index: n
               </div>
             ))}
           </div>
-          <Link
-            href="/booking"
+          <BookNowButton
             className="inline-flex items-center gap-3 mt-8 text-xs font-sans font-medium tracking-[0.18em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300 group"
           >
             <span className="w-6 h-px bg-muted-foreground group-hover:w-10 group-hover:bg-foreground transition-all duration-300" />
             Book This Service
-          </Link>
+          </BookNowButton>
         </div>
       </div>
     </motion.div>

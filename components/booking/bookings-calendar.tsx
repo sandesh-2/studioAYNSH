@@ -123,7 +123,7 @@ export function BookingsCalendar({ bookings, isAdmin = false, onDateClick }: Boo
             return (
               <div
                 key={`empty-${index}`}
-                className="aspect-square border-r border-b border-border bg-muted/30 p-2 md:p-3"
+                className="min-h-[80px] md:min-h-[100px] border-r border-b border-border bg-muted/30 p-2 md:p-3"
               />
             )
           }
@@ -139,41 +139,46 @@ export function BookingsCalendar({ bookings, isAdmin = false, onDateClick }: Boo
             <motion.div
               key={dateStr}
               onClick={() => onDateClick?.(dateStr)}
-              whileHover={dayBookings.length > 0 && !isPast ? { scale: 1.02 } : {}}
-              className={`aspect-square border-r border-b border-border p-2 md:p-3 flex flex-col ${
+              whileHover={dayBookings.length > 0 && !isPast ? { scale: 1.01 } : {}}
+              className={`min-h-[80px] md:min-h-[100px] border-r border-b border-border p-2 md:p-3 flex flex-col ${
                 isPast ? 'bg-muted/20' : 'bg-background hover:bg-secondary/30 transition-colors'
-              } ${dayBookings.length > 0 && !isPast ? 'cursor-pointer' : ''}`}
+              } ${dayBookings.length > 0 ? 'h-auto' : ''} ${dayBookings.length > 0 && !isPast ? 'cursor-pointer' : ''}`}
             >
               {/* Date number */}
-              <span className={`font-sans text-sm font-medium mb-1 ${
+              <span className={`font-sans text-sm font-medium mb-1.5 shrink-0 ${
                 isToday ? 'text-accent font-bold' : isPast ? 'text-muted-foreground/40' : 'text-foreground'
               }`}>
                 {day}
               </span>
 
-              {/* Bookings for this date */}
-              <div className="flex flex-col gap-0.5 flex-1 min-h-0">
-                {dayBookings.slice(0, 2).map((booking, i) => (
-                  <div
-                    key={booking.bookingId}
-                    className="bg-accent/20 border border-accent/40 rounded-none px-1.5 py-0.5 text-[10px] md:text-[11px] font-sans font-medium text-accent truncate overflow-hidden"
-                    title={isAdmin && booking.clientName ? `${booking.clientName} - ${SERVICE_LABELS[booking.service] || booking.service}` : SERVICE_LABELS[booking.service] || booking.service}
-                  >
-                    {isAdmin && booking.clientName ? (
-                      <span>{booking.clientName.split(' ')[0]}</span>
-                    ) : (
-                      <span>{SERVICE_LABELS[booking.service] || booking.service}</span>
-                    )}
-                  </div>
-                ))}
-
-                {/* More indicator */}
-                {dayBookings.length > 2 && (
-                  <div className="text-[9px] md:text-[10px] text-muted-foreground/60 font-sans px-1.5">
-                    +{dayBookings.length - 2} more
-                  </div>
-                )}
-              </div>
+              {/* All bookings for this date — no truncation */}
+              {dayBookings.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  {dayBookings.map((booking) => (
+                    <div
+                      key={booking.bookingId}
+                      className="bg-accent/20 border border-accent/40 px-1.5 py-1 font-sans font-medium text-accent"
+                    >
+                      {isAdmin ? (
+                        <div className="space-y-0.5">
+                          {booking.clientName && (
+                            <p className="text-[10px] md:text-[11px] leading-tight truncate">
+                              {booking.clientName}
+                            </p>
+                          )}
+                          <p className="text-[9px] md:text-[10px] leading-tight opacity-70">
+                            {SERVICE_LABELS[booking.service] || booking.service}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-[10px] md:text-[11px] leading-tight truncate">
+                          {SERVICE_LABELS[booking.service] || booking.service}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )
         })}

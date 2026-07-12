@@ -3,6 +3,7 @@
 import { motion, useInView } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
+import { BookNowButton } from '@/components/booking/book-now-button'
 import { useRef } from 'react'
 
 const timeline = [
@@ -113,13 +114,12 @@ export function AboutContent() {
               </p>
             </FadeUp>
             <FadeUp delay={0.5}>
-              <Link
-                href="/booking"
+              <BookNowButton
                 className="inline-flex items-center gap-4 text-xs font-sans font-medium tracking-[0.18em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300 group"
               >
                 <span className="w-8 h-px bg-muted-foreground group-hover:w-12 group-hover:bg-foreground transition-all duration-400" />
                 Work With Praveen
-              </Link>
+              </BookNowButton>
             </FadeUp>
           </div>
         </div>

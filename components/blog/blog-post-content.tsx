@@ -3,6 +3,7 @@
 import type { BlogPost } from '@/lib/blog-data'
 import { blogPosts } from '@/lib/blog-data'
 import { motion } from 'framer-motion'
+import { BookNowButton } from '@/components/booking/book-now-button'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -148,12 +149,10 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
         <p className="font-sans text-sm text-muted-foreground max-w-md mx-auto leading-relaxed mb-8">
           Every great photograph begins with a conversation. Reach out and let us craft something extraordinary together.
         </p>
-        <Link
-          href="/booking"
+        <BookNowButton
           className="inline-flex items-center justify-center px-8 py-3.5 border border-foreground text-foreground font-sans text-xs font-medium tracking-[0.2em] uppercase hover:bg-foreground hover:text-background transition-all duration-300"
-        >
-          Reserve Your Date
-        </Link>
+          label="Reserve Your Date"
+        />
       </div>
 
       {/* Continue Reading */}

@@ -145,6 +145,24 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
     }
   }, [loggedInUser, setValue])
 
+  // Pre-fill date/time from Check Availability modal (stored in sessionStorage)
+  useEffect(() => {
+    const preselectDate = sessionStorage.getItem('preselect_date')
+    const preselectTime = sessionStorage.getItem('preselect_time')
+    if (preselectDate) {
+      setValue('eventDate', preselectDate)
+      // Mark availability as already verified via the modal flow
+      setAvailabilityChecked(true)
+      setAvailabilityStatus({ available: true, bookingsOnDate: 0, slotsAvailable: 1, message: 'Date verified via availability check' })
+      sessionStorage.removeItem('preselect_date')
+    }
+    if (preselectTime) {
+      setValue('eventTime', preselectTime)
+      sessionStorage.removeItem('preselect_time')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Reset availability check when date changes
   useEffect(() => {
     setAvailabilityChecked(false)
