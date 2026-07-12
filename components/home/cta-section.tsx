@@ -4,6 +4,7 @@ import { motion, useInView } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRef } from 'react'
+import { BookNowButton } from '@/components/booking/book-now-button'
 
 export function CtaSection() {
   const ref = useRef<HTMLElement>(null)
@@ -56,12 +57,10 @@ export function CtaSection() {
             whileTap={{ scale: 0.97 }}
             transition={{ duration: 0.2 }}
           >
-            <Link
-              href="/booking"
+            <BookNowButton
               className="inline-flex items-center justify-center px-10 py-4 bg-background text-foreground text-xs font-sans font-medium tracking-[0.18em] uppercase hover:bg-accent hover:text-foreground transition-all duration-300 shadow-lg hover:shadow-2xl"
-            >
-              Book Your Session
-            </Link>
+              label="Book Your Session"
+            />
           </motion.div>
           <motion.div
             whileHover={{ y: -6, scale: 1.03 }}

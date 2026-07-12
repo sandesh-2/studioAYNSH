@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { MessageSquare, X, ChevronRight } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { BookNowButton } from '@/components/booking/book-now-button'
 
 // ─── FAQ data ────────────────────────────────────────────────────────────────
 interface FaqItem {
@@ -169,12 +170,10 @@ export function AiConcierge() {
                       ))}
                     </ul>
                     <div className="px-5 py-4">
-                      <a
-                        href="/booking"
+                      <BookNowButton
                         className="block w-full text-center py-3 bg-foreground text-background font-sans text-xs tracking-[0.18em] uppercase hover:bg-accent hover:text-foreground transition-all duration-300"
-                      >
-                        Book a Session
-                      </a>
+                        label="Book a Session"
+                      />
                     </div>
                   </motion.div>
                 )}

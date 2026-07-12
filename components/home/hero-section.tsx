@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRef } from 'react'
+import { BookNowButton } from '@/components/booking/book-now-button'
 
 export function HeroSection() {
   const containerRef = useRef<HTMLElement>(null)
@@ -94,13 +95,13 @@ export function HeroSection() {
             whileHover={{ x: 6 }}
             transition={{ duration: 0.3 }}
           >
-            <Link
-              href="/booking"
+            <BookNowButton
+              label="Book a Session"
               className="inline-flex items-center gap-3 text-xs font-sans font-medium tracking-[0.18em] uppercase text-background/70 hover:text-background transition-colors duration-300 group"
             >
               <span className="w-8 h-px bg-background/50 group-hover:w-12 group-hover:bg-background transition-all duration-400" />
               Book a Session
-            </Link>
+            </BookNowButton>
           </motion.div>
         </motion.div>
       </motion.div>
