@@ -244,12 +244,6 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
                     autoComplete="tel-national"
                     className="flex-1 bg-transparent py-3 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
                   />
-                  {/* Live digit counter */}
-                  <span className={`flex items-center pt-3 pb-3 font-sans text-xs tabular-nums select-none ml-2 ${
-                    phoneDigits.length === 10 ? 'text-green-600' : 'text-muted-foreground/40'
-                  }`}>
-                    {phoneDigits.length}/10
-                  </span>
                 </div>
                 {phoneError && (
                   <p className="mt-1 font-sans text-xs text-destructive">{phoneError}</p>

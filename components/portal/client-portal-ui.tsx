@@ -277,7 +277,7 @@ export function ClientPortalUI({ user, bookings: initial, calendarBookings = [] 
                     List View
                   </button>
                   <button
-                    onClick={() => setViewMode('calendar')}
+                    onClick={() => { setViewMode('calendar'); setActiveBooking(null) }}
                     className={`inline-flex items-center gap-2 px-4 py-2 font-sans text-xs font-medium tracking-[0.12em] uppercase transition-all duration-200 ${
                       viewMode === 'calendar'
                         ? 'bg-foreground text-background'
@@ -345,7 +345,8 @@ export function ClientPortalUI({ user, bookings: initial, calendarBookings = [] 
               </Link>
             </div>
 
-            {/* Booking detail panel */}
+            {/* Booking detail panel — hidden entirely in calendar view */}
+            {viewMode === 'list' && (
             <div className="lg:col-span-2">
               <AnimatePresence mode="wait">
                 {activeBooking ? (
@@ -519,6 +520,7 @@ export function ClientPortalUI({ user, bookings: initial, calendarBookings = [] 
                 )}
               </AnimatePresence>
             </div>
+            )}
           </div>
         )}
 
