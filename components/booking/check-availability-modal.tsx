@@ -4,12 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   X, Calendar, Clock, CheckCircle, XCircle, Loader2,
   ArrowRight, MessageSquare, Image, Layers, BookOpen,
+  ChevronUp, ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { checkAvailability } from '@/app/actions/booking'
-import { TimePicker } from '@/components/booking/time-picker'
 
 // ── Inline mini calendar for the modal ───────────────────────────────────
 
@@ -165,6 +165,88 @@ function MiniCalendar({
   )
 }
 
+// ── Inline always-visible time spinner (no trigger click needed) ──────────
+
+function pad2(n: number) { return String(n).padStart(2, '0') }
+
+function parseTime(val: string) {
+  if (!val) return { hour: 10, minute: 0, period: 'AM' as 'AM' | 'PM' }
+  const m = val.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  if (!m) return { hour: 10, minute: 0, period: 'AM' as 'AM' | 'PM' }
+  return {
+    hour:   parseInt(m[1], 10),
+    minute: parseInt(m[2], 10),
+    period: m[3].toUpperCase() as 'AM' | 'PM',
+  }
+}
+
+function formatTime(h: number, m: number, p: 'AM' | 'PM') {
+  return `${pad2(h)}:${pad2(m)} ${p}`
+}
+
+function SpinCol({
+  value, onUp, onDown, display, label,
+}: {
+  value: number; onUp: () => void; onDown: () => void
+  display: string; label: string
+}) {
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="font-sans text-[9px] tracking-[0.16em] uppercase text-muted-foreground/50 mb-1">{label}</span>
+      <button type="button" onClick={onUp}
+        className="w-10 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors duration-150"
+        aria-label={`Increase ${label}`}>
+        <ChevronUp size={15} />
+      </button>
+      <div className="w-14 h-11 flex items-center justify-center border border-border bg-secondary/40 select-none">
+        <span className="font-sans text-xl font-semibold text-foreground tabular-nums">{display}</span>
+      </div>
+      <button type="button" onClick={onDown}
+        className="w-10 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors duration-150"
+        aria-label={`Decrease ${label}`}>
+        <ChevronDown size={15} />
+      </button>
+    </div>
+  )
+}
+
+function InlineTimePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parsed = parseTime(value)
+  const [hour,   setHour]   = useState(parsed.hour)
+  const [minute, setMinute] = useState(parsed.minute)
+  const [period, setPeriod] = useState<'AM' | 'PM'>(parsed.period)
+
+  // Emit change whenever any spinner moves
+  useEffect(() => {
+    onChange(formatTime(hour, minute, period))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hour, minute, period])
+
+  return (
+    <div className="flex items-center justify-center gap-2 py-3">
+      <SpinCol value={hour}   onUp={() => setHour((h) => h === 12 ? 1 : h + 1)}
+               onDown={() => setHour((h) => h === 1 ? 12 : h - 1)}
+               display={pad2(hour)} label="Hour" />
+      <span className="font-serif text-2xl font-light text-foreground self-center mt-3 mx-1 select-none">:</span>
+      <SpinCol value={minute} onUp={() => setMinute((m) => m === 59 ? 0 : m + 1)}
+               onDown={() => setMinute((m) => m === 0 ? 59 : m - 1)}
+               display={pad2(minute)} label="Min" />
+      <div className="flex flex-col gap-1.5 ml-3 mt-3">
+        {(['AM', 'PM'] as const).map((p) => (
+          <button key={p} type="button" onClick={() => setPeriod(p)}
+            className={`px-3.5 py-2 font-sans text-xs tracking-[0.14em] border transition-all duration-150 ${
+              period === p
+                ? 'bg-foreground text-background border-foreground'
+                : 'border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground'
+            }`}>
+            {p}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Main modal ────────────────────────────────────────────────────────────
 
 export interface CheckAvailabilityModalProps {
@@ -220,13 +302,13 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
     }
   }
 
-  // Auto-trigger availability check whenever the date changes
+  // Auto-trigger availability check only once BOTH date and time are set
   useEffect(() => {
-    if (date && step === 'select') {
+    if (date && time && step === 'select') {
       handleCheck(date)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date])
+  }, [date, time])
 
   function handleContinue() {
     // Store selected date/time in sessionStorage so the booking form can pre-fill
@@ -323,19 +405,18 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
                       )}
                     </div>
 
-                    {/* Time picker — same spinner UI as booking form, no OK button needed */}
+                    {/* Time picker — always-visible inline spinner, no button click needed */}
                     <div>
-                      <div className="flex items-center gap-2 mb-4">
+                      <div className="flex items-center gap-2 mb-3">
                         <Clock size={14} className="text-muted-foreground" />
                         <span className="font-sans text-xs tracking-[0.18em] uppercase text-muted-foreground">
-                          Preferred Time{' '}
-                          <span className="text-muted-foreground/40 normal-case tracking-normal">(optional)</span>
+                          Select Time
                         </span>
                       </div>
-                      <TimePicker value={time} onChange={setTime} />
+                      <InlineTimePicker value={time} onChange={setTime} />
                     </div>
 
-                    {/* Inline checking indicator — shown while auto-check is running */}
+                    {/* Inline checking indicator */}
                     {step === 'checking' && (
                       <div className="flex items-center justify-center gap-2.5 py-3 text-muted-foreground">
                         <Loader2 size={14} className="animate-spin" />
@@ -345,10 +426,10 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
                       </div>
                     )}
 
-                    {/* Prompt shown before a date is selected */}
+                    {/* Prompt: waiting for a date to be picked */}
                     {!date && step === 'select' && (
                       <p className="text-center font-sans text-xs text-muted-foreground/50 tracking-wide">
-                        Select a date above to check availability automatically.
+                        Select a date and time above to check availability.
                       </p>
                     )}
                   </div>
