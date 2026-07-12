@@ -277,16 +277,31 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
 
   // Lock body scroll while open
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
+    if (open) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+      document.body.style.overflow = 'hidden'
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+    } else {
+      document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
+    }
   }, [open])
 
-  // Close on Escape
+  // Close on Escape key
   useEffect(() => {
     if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
   }, [open, onClose])
 
   async function handleCheck(dateToCheck?: string) {
@@ -302,13 +317,7 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
     }
   }
 
-  // Auto-trigger availability check only once BOTH date and time are set
-  useEffect(() => {
-    if (date && time && step === 'select') {
-      handleCheck(date)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date, time])
+  // Manual check — no auto-trigger. User clicks button.
 
   function handleContinue() {
     // Store selected date/time in sessionStorage so the booking form can pre-fill
@@ -330,15 +339,19 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — click outside modal to close */}
           <motion.div
             ref={overlayRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 bg-foreground/60 backdrop-blur-sm"
-            onClick={onClose}
+            className="fixed inset-0 z-40 bg-foreground/60 backdrop-blur-sm"
+            onClick={(e) => {
+              if (e.target === overlayRef.current) {
+                onClose()
+              }
+            }}
             aria-hidden="true"
           />
 
@@ -351,13 +364,13 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
             role="dialog"
             aria-modal="true"
             aria-label="Check availability"
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none px-0 sm:px-4"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 sm:px-4 py-4 sm:py-0"
           >
             <div
-              className="pointer-events-auto bg-background w-full sm:max-w-lg max-h-[95dvh] sm:max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
+              className="pointer-events-auto bg-background w-full sm:max-w-lg max-h-[min(90vh,calc(100dvh-2rem))] sm:max-h-[85vh] rounded-lg sm:rounded-lg shadow-2xl flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
+              {/* Header — fixed, does not scroll */}
               <div className="flex items-start justify-between px-6 pt-6 pb-5 border-b border-border flex-shrink-0">
                 <div>
                   <p className="font-sans text-[10px] tracking-[0.28em] uppercase text-muted-foreground mb-1">
@@ -370,15 +383,15 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-2 text-muted-foreground hover:text-foreground transition-colors duration-150 -mr-1 -mt-1"
-                  aria-label="Close"
+                  className="p-2 text-muted-foreground hover:text-foreground active:text-foreground transition-colors duration-150 flex-shrink-0"
+                  aria-label="Close modal"
                 >
                   <X size={18} strokeWidth={1.5} />
                 </button>
               </div>
 
-              {/* Body */}
-              <div className="flex-1 px-6 py-6 overflow-y-auto">
+              {/* Body — scrollable content area */}
+              <div className="flex-1 px-6 py-6 overflow-y-auto min-w-0">
 
                 {/* ── STEP: select / checking ── */}
                 {(step === 'select' || step === 'checking') && (
@@ -416,20 +429,30 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
                       <InlineTimePicker value={time} onChange={setTime} />
                     </div>
 
-                    {/* Inline checking indicator */}
-                    {step === 'checking' && (
-                      <div className="flex items-center justify-center gap-2.5 py-3 text-muted-foreground">
-                        <Loader2 size={14} className="animate-spin" />
-                        <span className="font-sans text-xs tracking-[0.18em] uppercase">
-                          Checking availability…
-                        </span>
-                      </div>
-                    )}
+                    {/* Check Availability button */}
+                    <button
+                      type="button"
+                      onClick={() => handleCheck()}
+                      disabled={!date || step === 'checking'}
+                      className="w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-foreground text-background font-sans text-xs font-medium tracking-[0.2em] uppercase transition-all duration-300 hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {step === 'checking' ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          Checking…
+                        </>
+                      ) : (
+                        <>
+                          <Calendar size={14} />
+                          Check Availability
+                        </>
+                      )}
+                    </button>
 
                     {/* Prompt: waiting for a date to be picked */}
                     {!date && step === 'select' && (
                       <p className="text-center font-sans text-xs text-muted-foreground/50 tracking-wide">
-                        Select a date and time above to check availability.
+                        Select a date and time, then click "Check Availability".
                       </p>
                     )}
                   </div>
