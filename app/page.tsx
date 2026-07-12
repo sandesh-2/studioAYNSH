@@ -9,14 +9,36 @@ import { Navigation } from '@/components/navigation'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Studio AYNSH — We Capture The Untold Story',
+  title: 'Studio AYNSH — Wedding Photographer Gorakhpur | Premium Photography & Cinematography',
   description:
-    'Premium luxury photography and cinematography studio in Gorakhpur. Specializing in wedding, portrait, fashion, and commercial photography. We capture your untold story.',
+    'Studio AYNSH — best wedding photographer in Gorakhpur, Uttar Pradesh. Premium photography and cinematography for weddings, pre-wedding shoots, portraits, fashion, drone and commercial photography across India. Founded by Praveen Gupta.',
+  keywords: [
+    'Studio AYNSH', 'Wedding Photographer Gorakhpur', 'Best Wedding Photographer Gorakhpur',
+    'Photography Studio Gorakhpur', 'Pre Wedding Shoot Gorakhpur', 'Praveen Gupta photographer',
+    'Destination Wedding Photographer India', 'Candid Wedding Photography', 'Drone Photography Gorakhpur',
+  ],
+  alternates: {
+    canonical: 'https://studioaynsh.com',
+  },
   openGraph: {
-    title: 'Studio AYNSH — We Capture The Untold Story',
+    title: 'Studio AYNSH — Wedding Photographer Gorakhpur | Premium Photography',
     description:
-      'Premium luxury photography and cinematography studio in Gorakhpur. Specializing in wedding, portrait, fashion, and commercial photography.',
+      'Best wedding photographer in Gorakhpur. Cinematic weddings, pre-wedding shoots, portraits and drone photography across India.',
     url: 'https://studioaynsh.com',
+    images: [
+      {
+        url: 'https://studioaynsh.com/api/og?title=Studio%20AYNSH',
+        width: 1200,
+        height: 630,
+        alt: 'Studio AYNSH — Premium Photography Studio, Gorakhpur',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Studio AYNSH — Wedding Photographer Gorakhpur',
+    description: 'Best wedding photographer in Gorakhpur. Cinematic weddings, pre-wedding, portraits, drone photography.',
+    images: [{ url: 'https://studioaynsh.com/api/og?title=Studio%20AYNSH', alt: 'Studio AYNSH — Premium Photography' }],
   },
 }
 

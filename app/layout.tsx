@@ -24,28 +24,38 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL('https://studioaynsh.com'),
   title: {
-    default: 'Studio AYNSH — We Capture The Untold Story',
+    default: 'Studio AYNSH — Wedding Photographer Gorakhpur | Premium Photography',
     template: '%s | Studio AYNSH',
   },
   description:
-    'Studio AYNSH is a premium luxury photography and cinematography studio based in Gorakhpur, India. Specializing in wedding, portrait, fashion, and commercial photography.',
+    'Studio AYNSH — premium wedding photography and cinematography studio in Gorakhpur, Uttar Pradesh. Specialising in cinematic weddings, pre-wedding shoots, portraits, fashion, drone photography and commercial photography across India. Founded by Praveen Gupta.',
   keywords: [
-    'luxury photography',
-    'wedding photography',
-    'portrait photography',
-    'fashion photography',
-    'cinematography',
-    'Gorakhpur photographer',
-    'Praveen Gupta',
     'Studio AYNSH',
-    'pre-wedding photography',
-    'drone photography',
-    'professional studio',
-    'photography services',
+    'Studio AYNSH Gorakhpur',
+    'Wedding Photographer Gorakhpur',
+    'Best Wedding Photographer Gorakhpur',
+    'Photography Studio Gorakhpur',
+    'Pre Wedding Photographer Gorakhpur',
+    'Pre Wedding Shoot Gorakhpur',
+    'Wedding Photography Gorakhpur',
+    'Wedding Cinematographer Gorakhpur',
+    'Best Photographer Gorakhpur',
+    'Professional Photographer Gorakhpur',
+    'Portrait Photographer Gorakhpur',
+    'Fashion Photographer Gorakhpur',
+    'Drone Photography Gorakhpur',
+    'Wedding Videographer Gorakhpur',
+    'Luxury Wedding Photographer India',
+    'Destination Wedding Photographer',
+    'Candid Wedding Photographer',
+    'Photographer Uttar Pradesh',
+    'Praveen Gupta photographer',
   ],
-  authors: [{ name: 'Praveen Gupta', url: 'https://studioaynsh.com' }],
-  creator: 'Studio AYNSH',
+  authors: [{ name: 'Praveen Gupta', url: 'https://studioaynsh.com/about' }],
+  creator: 'Praveen Gupta',
   publisher: 'Studio AYNSH',
+  category: 'Photography',
+  classification: 'Photography & Cinematography Services',
   formatDetection: {
     email: false,
     address: false,
@@ -56,28 +66,32 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     url: 'https://studioaynsh.com',
     siteName: 'Studio AYNSH',
-    title: 'Studio AYNSH — We Capture The Untold Story',
+    title: 'Studio AYNSH — Wedding Photographer Gorakhpur | Premium Photography',
     description:
-      'Premium luxury photography and cinematography studio. Every image is a chapter of an untold story.',
+      'Premium wedding photography and cinematography studio in Gorakhpur. Cinematic weddings, pre-wedding shoots, portraits, fashion and drone photography across India.',
     images: [
       {
         url: 'https://studioaynsh.com/api/og?title=Studio%20AYNSH',
         width: 1200,
         height: 630,
-        alt: 'Studio AYNSH - Premium Photography',
+        alt: 'Studio AYNSH — Premium Photography Studio, Gorakhpur',
         type: 'image/jpeg',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Studio AYNSH — We Capture The Untold Story',
-    description: 'Premium luxury photography and cinematography studio.',
+    site: '@studioaynsh',
     creator: '@studioaynsh',
-    images: ['https://studioaynsh.com/api/og?title=Studio%20AYNSH'],
-  },
-  verification: {
-    google: 'google-site-verification-code-here',
+    title: 'Studio AYNSH — Wedding Photographer Gorakhpur',
+    description:
+      'Premium wedding photography and cinematography studio in Gorakhpur, India. We capture the untold story.',
+    images: [
+      {
+        url: 'https://studioaynsh.com/api/og?title=Studio%20AYNSH',
+        alt: 'Studio AYNSH — Premium Photography Studio, Gorakhpur',
+      },
+    ],
   },
   robots: {
     index: true,
@@ -94,6 +108,9 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: 'https://studioaynsh.com',
+    languages: {
+      'en-IN': 'https://studioaynsh.com',
+    },
   },
 }
 
@@ -112,6 +129,15 @@ export default function RootLayout({
   return (
     <html lang="en" data-scroll-behavior="smooth" className={`${cormorant.variable} ${inter.variable} bg-background`}>
       <head>
+        {/* Resource hints — critical third-party origins */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://va.vercel-scripts.com" />
+        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+        <link rel="dns-prefetch" href="https://maps.googleapis.com" />
+        <link rel="dns-prefetch" href="https://maps.gstatic.com" />
+
+        {/* PWA / native app */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -119,7 +145,15 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Studio AYNSH" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
         <meta name="msapplication-TileColor" content="#f7f3ee" />
-        <link rel="canonical" href="https://studioaynsh.com" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+
+        {/* Geographic / local SEO meta */}
+        <meta name="geo.region" content="IN-UP" />
+        <meta name="geo.placename" content="Gorakhpur, Uttar Pradesh, India" />
+        <meta name="geo.position" content="26.722472;83.390111" />
+        <meta name="ICBM" content="26.722472, 83.390111" />
+
+        {/* Structured data — global */}
         <LocalBusinessSchema />
       </head>
       <body className="antialiased font-sans">

@@ -1,24 +1,55 @@
 import { Footer } from '@/components/footer'
 import { Navigation } from '@/components/navigation'
 import { StudioMap } from '@/components/studio-map'
+import { WebPageSchema } from '@/components/structured-data'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Contact Studio AYNSH | Book Your Photography Session',
+  title: 'Contact Studio AYNSH — Book Your Session | Gorakhpur Photography Studio',
   description:
-    'Contact Studio AYNSH in Gorakhpur for bookings, enquiries, or collaborations. Reach Praveen Gupta for premium photography and cinematography services.',
-  keywords: ['contact studio', 'photography booking', 'Studio AYNSH contact', 'Gorakhpur'],
+    'Contact Studio AYNSH in Gorakhpur to book your photography or cinematography session. Reach Praveen Gupta by phone (+91 7084019414), WhatsApp or email. Bhagat Chauraha, Taramandal, Gorakhpur — 273016.',
+  keywords: [
+    'Contact Studio AYNSH', 'Book photography session Gorakhpur', 'Photography studio contact Gorakhpur',
+    'Praveen Gupta contact', 'Studio AYNSH phone number', 'Photography booking Gorakhpur',
+    'Wedding photographer contact Gorakhpur',
+  ],
+  alternates: {
+    canonical: 'https://studioaynsh.com/contact',
+  },
   openGraph: {
-    title: 'Contact Studio AYNSH | Book Your Photography Session',
+    title: 'Contact Studio AYNSH — Book Your Photography Session',
     description:
-      'Get in touch with Studio AYNSH for bookings, enquiries, or collaboration opportunities.',
+      'Contact Studio AYNSH in Gorakhpur for wedding, portrait, fashion or commercial photography bookings.',
     url: 'https://studioaynsh.com/contact',
+    images: [
+      {
+        url: 'https://studioaynsh.com/api/og?title=Contact%20Us',
+        width: 1200,
+        height: 630,
+        alt: 'Contact Studio AYNSH — Gorakhpur Photography Studio',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Contact Studio AYNSH | Gorakhpur Photography Studio',
+    description: 'Book your photography session with Studio AYNSH, Gorakhpur.',
+    images: [{ url: 'https://studioaynsh.com/api/og?title=Contact%20Us', alt: 'Contact Studio AYNSH' }],
   },
 }
 
 export default function ContactPage() {
   return (
     <>
+      <WebPageSchema
+        title="Contact Studio AYNSH — Book Your Photography Session"
+        description="Contact Studio AYNSH in Gorakhpur for photography and cinematography bookings. Reach Praveen Gupta by phone, WhatsApp or email."
+        url="https://studioaynsh.com/contact"
+        breadcrumbItems={[
+          { name: 'Home', url: 'https://studioaynsh.com' },
+          { name: 'Contact', url: 'https://studioaynsh.com/contact' },
+        ]}
+      />
       <Navigation />
       <main className="pt-20">
         <section className="py-20 lg:py-28 px-6 lg:px-12 max-w-7xl mx-auto">
