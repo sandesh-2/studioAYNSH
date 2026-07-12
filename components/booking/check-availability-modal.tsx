@@ -216,24 +216,31 @@ function InlineTimePicker({ value, onChange }: { value: string; onChange: (v: st
   const [minute, setMinute] = useState(parsed.minute)
   const [period, setPeriod] = useState<'AM' | 'PM'>(parsed.period)
 
-  // Emit change whenever any spinner moves
+  // Sync internal state when the prop value changes externally
   useEffect(() => {
-    onChange(formatTime(hour, minute, period))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hour, minute, period])
+    const newParsed = parseTime(value)
+    setHour(newParsed.hour)
+    setMinute(newParsed.minute)
+    setPeriod(newParsed.period)
+  }, [value])
+
+  // Emit change whenever any spinner moves
+  const handleChange = (h: number, m: number, p: 'AM' | 'PM') => {
+    onChange(formatTime(h, m, p))
+  }
 
   return (
     <div className="flex items-center justify-center gap-2 py-3">
-      <SpinCol value={hour}   onUp={() => setHour((h) => h === 12 ? 1 : h + 1)}
-               onDown={() => setHour((h) => h === 1 ? 12 : h - 1)}
+      <SpinCol value={hour}   onUp={() => { const h = hour === 12 ? 1 : hour + 1; setHour(h); handleChange(h, minute, period) }}
+               onDown={() => { const h = hour === 1 ? 12 : hour - 1; setHour(h); handleChange(h, minute, period) }}
                display={pad2(hour)} label="Hour" />
       <span className="font-serif text-2xl font-light text-foreground self-center mt-3 mx-1 select-none">:</span>
-      <SpinCol value={minute} onUp={() => setMinute((m) => m === 59 ? 0 : m + 1)}
-               onDown={() => setMinute((m) => m === 0 ? 59 : m - 1)}
+      <SpinCol value={minute} onUp={() => { const m = minute === 59 ? 0 : minute + 1; setMinute(m); handleChange(hour, m, period) }}
+               onDown={() => { const m = minute === 0 ? 59 : minute - 1; setMinute(m); handleChange(hour, m, period) }}
                display={pad2(minute)} label="Min" />
       <div className="flex flex-col gap-1.5 ml-3 mt-3">
         {(['AM', 'PM'] as const).map((p) => (
-          <button key={p} type="button" onClick={() => setPeriod(p)}
+          <button key={p} type="button" onClick={() => { setPeriod(p); handleChange(hour, minute, p) }}
             className={`px-3.5 py-2 font-sans text-xs tracking-[0.14em] border transition-all duration-150 ${
               period === p
                 ? 'bg-foreground text-background border-foreground'
@@ -364,10 +371,10 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
             role="dialog"
             aria-modal="true"
             aria-label="Check availability"
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 sm:px-4 py-4 sm:py-0"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
           >
             <div
-              className="pointer-events-auto bg-background w-full sm:max-w-lg max-h-[min(90vh,calc(100dvh-2rem))] sm:max-h-[85vh] rounded-lg sm:rounded-lg shadow-2xl flex flex-col overflow-hidden"
+              className="pointer-events-auto bg-background w-[calc(100%-2rem)] max-w-lg h-auto max-h-[min(90vh,calc(100dvh-2rem))] sm:max-h-[85vh] rounded-lg shadow-2xl flex flex-col overflow-hidden mb-4 sm:mb-0"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header — fixed, does not scroll */}
@@ -390,8 +397,8 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
                 </button>
               </div>
 
-              {/* Body — scrollable content area */}
-              <div className="flex-1 px-6 py-6 overflow-y-auto min-w-0">
+              {/* Body — scrollable content area, fixed padding to prevent resize */}
+              <div className="flex-1 px-6 py-8 overflow-y-auto min-w-0 w-full">
 
                 {/* ── STEP: select / checking ── */}
                 {(step === 'select' || step === 'checking') && (
