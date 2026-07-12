@@ -11,9 +11,34 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Book a Session',
+  title: 'Book a Photography Session | Studio AYNSH Gorakhpur',
   description:
-    'Book your photography session with Studio AYNSH. Wedding, portrait, pre-wedding, fashion, and commercial photography in Gorakhpur and across India.',
+    'Book your photography or cinematography session with Studio AYNSH in Gorakhpur. Wedding, pre-wedding, portrait, fashion, drone and commercial photography across India. Reserve your date with Praveen Gupta.',
+  keywords: [
+    'Book photography session Gorakhpur', 'Book wedding photographer Gorakhpur',
+    'Photography session booking India', 'Studio AYNSH booking',
+    'Reserve wedding photographer', 'Pre-wedding shoot booking',
+  ],
+  alternates: {
+    canonical: 'https://studioaynsh.com/booking',
+  },
+  openGraph: {
+    title: 'Book a Photography Session | Studio AYNSH Gorakhpur',
+    description: 'Reserve your photography session with Studio AYNSH, Gorakhpur. Weddings, pre-wedding, portraits and more.',
+    url: 'https://studioaynsh.com/booking',
+    images: [
+      {
+        url: 'https://studioaynsh.com/api/og?title=Book%20a%20Session',
+        width: 1200,
+        height: 630,
+        alt: 'Book a Photography Session — Studio AYNSH Gorakhpur',
+      },
+    ],
+  },
+  robots: {
+    index: false, // Booking requires auth — keep out of search index
+    follow: false,
+  },
 }
 
 export default async function BookingPage() {
