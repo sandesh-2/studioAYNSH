@@ -66,11 +66,15 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
   // pad to full rows
   while (cells.length % 7 !== 0) cells.push(null)
 
+  // First day of the current calendar month — used for all boundary checks
+  // so there are zero time-component issues.
+  const todayMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+
   function prevMonth() {
     setView((v) => {
       const d = new Date(v.year, v.month - 1, 1)
-      // Prevent navigation before current month
-      if (d < today) return v
+      // Block navigation to any month before the current calendar month
+      if (d < todayMonthStart) return v
       return { year: d.getFullYear(), month: d.getMonth() }
     })
   }
@@ -83,17 +87,8 @@ export function CalendarPicker({ value, onChange, error }: CalendarPickerProps) 
     })
   }
 
-  // Check if current view can navigate prev/next
-  // Compare at month granularity only (no time component issues)
-  const todayMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-  const canGoPrev = (() => {
-    const d = new Date(view.year, view.month - 1, 1)
-    return d >= todayMonthStart
-  })()
-  const canGoNext = (() => {
-    const d = new Date(view.year, view.month + 1, 1)
-    return d <= maxDate
-  })()
+  const canGoPrev = new Date(view.year, view.month - 1, 1) >= todayMonthStart
+  const canGoNext = new Date(view.year, view.month + 1, 1) <= maxDate
 
   function selectDay(day: number) {
     const str = `${view.year}-${pad(view.month + 1)}-${pad(day)}`

@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { checkAvailability } from '@/app/actions/booking'
+import { TimePicker } from '@/components/booking/time-picker'
 
 // ── Inline mini calendar for the modal ───────────────────────────────────
 
@@ -52,7 +53,9 @@ function MiniCalendar({
   ]
   while (cells.length % 7 !== 0) cells.push(null)
 
-  const canGoPrev = new Date(view.year, view.month - 1, 1) >= new Date(today.getFullYear(), today.getMonth(), 1)
+  // Compare at month granularity only — no time-component issues
+  const todayMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+  const canGoPrev = new Date(view.year, view.month - 1, 1) >= todayMonthStart
   const canGoNext = new Date(view.year, view.month + 1, 1) <= maxDate
 
   function prevMonth() {
@@ -162,40 +165,6 @@ function MiniCalendar({
   )
 }
 
-// ── Inline mini time selector ─────────────────────────────────────────────
-
-const TIME_SLOTS = [
-  '07:00 AM', '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-  '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM',
-]
-
-function TimeSelector({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <div className="grid grid-cols-3 gap-1.5">
-      {TIME_SLOTS.map((slot) => (
-        <button
-          key={slot}
-          type="button"
-          onClick={() => onChange(slot)}
-          className={`py-2 px-1 font-sans text-xs text-center transition-all duration-150 border ${
-            value === slot
-              ? 'bg-foreground text-background border-foreground'
-              : 'border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground'
-          }`}
-        >
-          {slot}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 // ── Main modal ────────────────────────────────────────────────────────────
 
 export interface CheckAvailabilityModalProps {
@@ -238,17 +207,26 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
     return () => document.removeEventListener('keydown', handler)
   }, [open, onClose])
 
-  async function handleCheck() {
-    if (!date) return
+  async function handleCheck(dateToCheck?: string) {
+    const target = dateToCheck ?? date
+    if (!target) return
     setStep('checking')
     try {
-      const result = await checkAvailability(date)
+      const result = await checkAvailability(target)
       setSlotsAvailable(result.slotsAvailable ?? 0)
       setStep(result.available ? 'available' : 'unavailable')
     } catch {
       setStep('unavailable')
     }
   }
+
+  // Auto-trigger availability check whenever the date changes
+  useEffect(() => {
+    if (date && step === 'select') {
+      handleCheck(date)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date])
 
   function handleContinue() {
     // Store selected date/time in sessionStorage so the booking form can pre-fill
@@ -265,8 +243,6 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
         day: 'numeric', month: 'long', year: 'numeric', weekday: 'long',
       })
     : ''
-
-  const canCheck = !!date
 
   return (
     <AnimatePresence>
@@ -322,7 +298,7 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
               {/* Body */}
               <div className="flex-1 px-6 py-6 overflow-y-auto">
 
-                {/* ── STEP: select ── */}
+                {/* ── STEP: select / checking ── */}
                 {(step === 'select' || step === 'checking') && (
                   <div className="space-y-8">
                     {/* Date picker */}
@@ -333,7 +309,13 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
                           Select Date
                         </span>
                       </div>
-                      <MiniCalendar value={date} onChange={(v) => { setDate(v); setStep('select') }} />
+                      <MiniCalendar
+                        value={date}
+                        onChange={(v) => {
+                          setDate(v)
+                          setStep('select')
+                        }}
+                      />
                       {date && (
                         <p className="mt-3 font-sans text-xs text-accent">
                           Selected: {displayDate}
@@ -341,36 +323,34 @@ export function CheckAvailabilityModal({ open, onClose }: CheckAvailabilityModal
                       )}
                     </div>
 
-                    {/* Time picker */}
+                    {/* Time picker — same spinner UI as booking form, no OK button needed */}
                     <div>
                       <div className="flex items-center gap-2 mb-4">
                         <Clock size={14} className="text-muted-foreground" />
                         <span className="font-sans text-xs tracking-[0.18em] uppercase text-muted-foreground">
-                          Preferred Time <span className="text-muted-foreground/40 normal-case tracking-normal">(optional)</span>
+                          Preferred Time{' '}
+                          <span className="text-muted-foreground/40 normal-case tracking-normal">(optional)</span>
                         </span>
                       </div>
-                      <TimeSelector value={time} onChange={setTime} />
+                      <TimePicker value={time} onChange={setTime} />
                     </div>
 
-                    {/* Check button */}
-                    <button
-                      type="button"
-                      onClick={handleCheck}
-                      disabled={!canCheck || step === 'checking'}
-                      className="w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-foreground text-background font-sans text-xs font-medium tracking-[0.2em] uppercase transition-all duration-300 hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {step === 'checking' ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          Checking...
-                        </>
-                      ) : (
-                        <>
-                          <Calendar size={14} />
-                          Check Availability
-                        </>
-                      )}
-                    </button>
+                    {/* Inline checking indicator — shown while auto-check is running */}
+                    {step === 'checking' && (
+                      <div className="flex items-center justify-center gap-2.5 py-3 text-muted-foreground">
+                        <Loader2 size={14} className="animate-spin" />
+                        <span className="font-sans text-xs tracking-[0.18em] uppercase">
+                          Checking availability…
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Prompt shown before a date is selected */}
+                    {!date && step === 'select' && (
+                      <p className="text-center font-sans text-xs text-muted-foreground/50 tracking-wide">
+                        Select a date above to check availability automatically.
+                      </p>
+                    )}
                   </div>
                 )}
 
