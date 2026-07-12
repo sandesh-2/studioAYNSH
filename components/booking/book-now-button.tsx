@@ -1,41 +1,33 @@
 'use client'
 
-import { useState } from 'react'
-import { CheckAvailabilityModal } from './check-availability-modal'
+import { useRouter } from 'next/navigation'
 
 interface BookNowButtonProps {
   /** The visible text on the button */
   label?: string
   /** Tailwind className(s) for the trigger element */
   className?: string
-  /** Render as a block-level element wrapping children, instead of a <button> */
-  asChild?: boolean
   children?: React.ReactNode
 }
 
 /**
- * Drop-in replacement for <Link href="/booking"> on public-facing CTAs.
- * Opens the Check Availability modal first; "Continue to Booking" navigates
- * to /booking with the pre-selected date stored in sessionStorage.
+ * Navigates directly to the booking page at /booking.
+ * Both "Book Now" and "Book Your Session" buttons now trigger the same booking flow.
  */
 export function BookNowButton({
   label = 'Book Now',
   className = '',
   children,
 }: BookNowButtonProps) {
-  const [open, setOpen] = useState(false)
+  const router = useRouter()
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={className}
-      >
-        {children ?? label}
-      </button>
-
-      <CheckAvailabilityModal open={open} onClose={() => setOpen(false)} />
-    </>
+    <button
+      type="button"
+      onClick={() => router.push('/booking')}
+      className={className}
+    >
+      {children ?? label}
+    </button>
   )
 }
