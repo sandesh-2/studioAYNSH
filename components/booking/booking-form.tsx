@@ -1,6 +1,6 @@
 'use client'
 
-import { createBooking } from '@/app/actions/booking'
+import { createBooking, checkAvailability } from '@/app/actions/booking'
 import { CalendarPicker } from './calendar-picker'
 import { TimePicker } from './time-picker'
 import { CustomSelect } from './custom-select'
@@ -8,7 +8,7 @@ import { SearchableSelect } from './searchable-select'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { CheckCircle, Loader2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { CheckCircle, Loader2, ChevronRight, ChevronLeft, AlertCircle, Calendar } from 'lucide-react'
 
 interface BookingData {
   clientName: string
@@ -109,6 +109,16 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [serverError, setServerError] = useState('')
+  
+  // Availability check state
+  const [availabilityChecked, setAvailabilityChecked] = useState(false)
+  const [availabilityStatus, setAvailabilityStatus] = useState<{
+    available: boolean
+    bookingsOnDate: number
+    slotsAvailable: number
+    message: string
+  } | null>(null)
+  const [checkingAvailability, setCheckingAvailability] = useState(false)
   const {
     register,
     handleSubmit,
@@ -119,6 +129,13 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
     reset,
   } = useForm<BookingData>({ mode: 'onTouched' })
 
+  // Watch form values
+  const selectedDate    = watch('eventDate')
+  const selectedTime    = watch('eventTime')
+  const selectedService = watch('service')
+  const selectedState   = watch('state')
+  const selectedBudget  = watch('budget')
+
   // Autofill step-1 fields from the logged-in user's profile
   useEffect(() => {
     if (loggedInUser) {
@@ -128,11 +145,37 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
     }
   }, [loggedInUser, setValue])
 
-  const selectedDate    = watch('eventDate')
-  const selectedTime    = watch('eventTime')
-  const selectedService = watch('service')
-  const selectedState   = watch('state')
-  const selectedBudget  = watch('budget')
+  // Reset availability check when date changes
+  useEffect(() => {
+    setAvailabilityChecked(false)
+    setAvailabilityStatus(null)
+  }, [selectedDate])
+
+  // Handle availability check
+  async function handleCheckAvailability() {
+    if (!selectedDate) return
+    setCheckingAvailability(true)
+    try {
+      const result = await checkAvailability(selectedDate)
+      setAvailabilityStatus({
+        available: result.available,
+        bookingsOnDate: result.bookingsOnDate || 0,
+        slotsAvailable: result.slotsAvailable || 0,
+        message: result.message || '',
+      })
+      setAvailabilityChecked(true)
+    } catch (err) {
+      setAvailabilityStatus({
+        available: false,
+        bookingsOnDate: 0,
+        slotsAvailable: 0,
+        message: 'Could not check availability',
+      })
+      setAvailabilityChecked(true)
+    } finally {
+      setCheckingAvailability(false)
+    }
+  }
 
   async function goNext() {
     let valid = false
@@ -143,10 +186,23 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
       if (!selectedService) { valid = false }
       if (!selectedDate)    { valid = false }
       if (!selectedState)   { valid = false }
+      
+      // On step 2, check that availability has been verified and date is available
+      if (valid) {
+        if (!availabilityChecked) {
+          setServerError('Please check availability for your selected date before proceeding')
+          return
+        }
+        if (availabilityStatus && !availabilityStatus.available) {
+          setServerError('The selected date is fully booked. Please choose another date.')
+          return
+        }
+      }
     }
     if (valid) {
       setDirection(1)
       setStep((s) => s + 1)
+      setServerError('')
     }
   }
 
@@ -423,6 +479,69 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
                     <p className="mt-1.5 font-sans text-xs text-destructive">Please select a date</p>
                   )}
                 </div>
+
+                {/* Availability Check Section */}
+                {selectedDate && (
+                  <div className="space-y-4 pt-2">
+                    <motion.button
+                      type="button"
+                      onClick={handleCheckAvailability}
+                      disabled={checkingAvailability || availabilityChecked}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full inline-flex items-center justify-center gap-2 font-sans text-xs font-medium tracking-[0.15em] uppercase border border-accent/40 text-accent px-6 py-3 hover:bg-accent/5 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
+                    >
+                      {checkingAvailability ? (
+                        <>
+                          <Loader2 size={13} className="animate-spin" />
+                          Checking...
+                        </>
+                      ) : availabilityChecked ? (
+                        <>
+                          <Calendar size={13} />
+                          Check Another Date
+                        </>
+                      ) : (
+                        <>
+                          <Calendar size={13} />
+                          Check Availability
+                        </>
+                      )}
+                    </motion.button>
+
+                    {availabilityStatus && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`p-4 border rounded-none font-sans text-sm ${
+                          availabilityStatus.available
+                            ? 'bg-green-500/5 border-green-500/30 text-green-700'
+                            : 'bg-orange-500/5 border-orange-500/30 text-orange-700'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 space-y-1">
+                            <p className="font-medium">
+                              {availabilityStatus.available
+                                ? '✓ Date Available'
+                                : '✗ Date Fully Booked'}
+                            </p>
+                            <p className="text-xs opacity-80">
+                              {availabilityStatus.message}
+                              {availabilityStatus.available && ` (${availabilityStatus.slotsAvailable} ${availabilityStatus.slotsAvailable === 1 ? 'slot' : 'slots'} remaining)`}
+                            </p>
+                            {!availabilityStatus.available && (
+                              <p className="text-xs opacity-75 mt-2">
+                                We currently have 3 bookings on this date. Please select a different date to proceed, or reach out to us and we&apos;ll do our best to accommodate you.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
 
                 {/* Preferred time — TimePicker has its own trigger */}
                 <div>

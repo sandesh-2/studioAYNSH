@@ -165,6 +165,102 @@ export async function createBooking(input: BookingInput) {
   }
 }
 
+// ── checkAvailability ─────────────────────────────────────────────────────
+// Check if a date has available slots (max 3 bookings per date)
+// Returns true if slots available, false if fully booked (3 or more bookings)
+
+export async function checkAvailability(eventDate: string) {
+  try {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) {
+      throw new Error('Invalid date format')
+    }
+
+    // Count bookings for the selected date
+    const bookingsOnDate = await db
+      .select()
+      .from(bookingEvent)
+      .where(eq(bookingEvent.eventDate, eventDate))
+
+    const bookingCount = bookingsOnDate.length
+
+    // Maximum 3 bookings per date
+    const isAvailable = bookingCount < 3
+    const slotsAvailable = Math.max(0, 3 - bookingCount)
+
+    return {
+      available: isAvailable,
+      bookingsOnDate: bookingCount,
+      slotsAvailable,
+      message: isAvailable 
+        ? `${slotsAvailable === 1 ? '1 slot' : `${slotsAvailable} slots`} available on this date`
+        : 'This date is fully booked for now',
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unable to check availability'
+    return { available: false, error: message, bookingsOnDate: 0, slotsAvailable: 0, message: '' }
+  }
+}
+
+// ── getMyBookingsForCalendar ───────────────────────────────────────────────
+// Returns bookings with event dates for calendar display (client view)
+
+export async function getMyBookingsForCalendar() {
+  try {
+    const userId = await getRequiredUserId()
+
+    const bookings = await db
+      .select({
+        id: bookingV2.id,
+        service: bookingV2.service,
+        eventDate: bookingEvent.eventDate,
+      })
+      .from(bookingV2)
+      .innerJoin(bookingEvent, eq(bookingEvent.bookingId, bookingV2.id))
+      .where(eq(bookingV2.userId, userId))
+
+    return bookings.map((b) => ({
+      bookingId: b.id,
+      date: b.eventDate,
+      service: b.service,
+    }))
+  } catch (err) {
+    return []
+  }
+}
+
+// ── getAllBookingsForCalendar ──────────────────────────────────────────────
+// Returns all bookings with client names for admin calendar view
+
+export async function getAllBookingsForCalendar() {
+  try {
+    const userId = await getRequiredUserId()
+    
+    // Verify user is admin
+    const headersList = await headers()
+    const session = await auth.api.getSession({ headers: headersList })
+    if (!session?.user) throw new Error('Unauthorized')
+
+    const bookings = await db
+      .select({
+        id: bookingV2.id,
+        service: bookingV2.service,
+        clientName: bookingV2.clientName,
+        eventDate: bookingEvent.eventDate,
+      })
+      .from(bookingV2)
+      .innerJoin(bookingEvent, eq(bookingEvent.bookingId, bookingV2.id))
+
+    return bookings.map((b) => ({
+      bookingId: b.id,
+      date: b.eventDate,
+      service: b.service,
+      clientName: b.clientName,
+    }))
+  } catch (err) {
+    return []
+  }
+}
+
 // ── getMyBookings ──────────────────────────────────────────────────────────
 // Returns the logged-in client's bookings joined with event, financials, and
 // notes. Uses inArray for a single round-trip per related table.
