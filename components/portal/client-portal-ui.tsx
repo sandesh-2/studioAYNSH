@@ -2,11 +2,12 @@
 
 import { signOut } from '@/lib/auth-client'
 import { PROGRESS_STAGES, SERVICE_LABELS, type FullBooking } from '@/lib/db/schema'
+import { BookingsCalendar } from '@/components/booking/bookings-calendar'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Calendar, MapPin, Clock, IndianRupee,
   LogOut, ChevronRight, CheckCircle, XCircle, AlertCircle,
-  Users, SlidersHorizontal, ArrowUpDown, ChevronDown,
+  Users, SlidersHorizontal, ArrowUpDown, ChevronDown, LayoutGrid, List,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -26,13 +27,15 @@ const sortLabels: Record<SortMode, string> = { newest: 'Newest First', oldest: '
 interface Props {
   user: { id: string; name: string; email: string; role?: string | null }
   bookings: FullBooking[]
+  calendarBookings?: Array<{ bookingId: string; date: string; service: string }>
 }
 
-export function ClientPortalUI({ user, bookings: initial }: Props) {
+export function ClientPortalUI({ user, bookings: initial, calendarBookings = [] }: Props) {
   const router = useRouter()
   const [bookings]                = useState(initial)
   const [activeBooking, setActiveBooking] = useState<FullBooking | null>(null)
   const [signingOut, setSigningOut] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
 
   // Sort & filter state
   const [sortMode, setSortMode]         = useState<SortMode>('newest')
@@ -259,7 +262,43 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                 )}
               </AnimatePresence>
 
-              {/* Booking cards */}
+              {/* View toggle buttons */}
+              {filteredBookings.length > 0 && (
+                <div className="flex gap-2 pt-4 border-t border-border">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`inline-flex items-center gap-2 px-4 py-2 font-sans text-xs font-medium tracking-[0.12em] uppercase transition-all duration-200 ${
+                      viewMode === 'list'
+                        ? 'bg-foreground text-background'
+                        : 'border border-border text-foreground hover:border-foreground'
+                    }`}
+                  >
+                    <List size={14} />
+                    List View
+                  </button>
+                  <button
+                    onClick={() => setViewMode('calendar')}
+                    className={`inline-flex items-center gap-2 px-4 py-2 font-sans text-xs font-medium tracking-[0.12em] uppercase transition-all duration-200 ${
+                      viewMode === 'calendar'
+                        ? 'bg-foreground text-background'
+                        : 'border border-border text-foreground hover:border-foreground'
+                    }`}
+                  >
+                    <LayoutGrid size={14} />
+                    Calendar View
+                  </button>
+                </div>
+              )}
+
+              {/* Calendar view */}
+              {viewMode === 'calendar' && (
+                <div className="pt-6">
+                  <BookingsCalendar bookings={calendarBookings} isAdmin={false} />
+                </div>
+              )}
+
+              {/* Booking cards (list view) */}
+              {viewMode === 'list' && (
               <div className="space-y-2 pt-2">
                 {filteredBookings.length === 0 ? (
                   <p className="font-sans text-sm text-muted-foreground text-center py-6">No bookings match your filter.</p>
@@ -296,6 +335,7 @@ export function ClientPortalUI({ user, bookings: initial }: Props) {
                   })
                 )}
               </div>
+              )}
 
               <Link
                 href="/booking"

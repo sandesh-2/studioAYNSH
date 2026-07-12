@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { AdminDashboard } from '@/components/admin/admin-dashboard'
-import { getAllBookings, getAllClients } from '@/app/actions/admin'
+import { getAllBookings, getAllClients, getAllBookingsForCalendar } from '@/app/actions/admin'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -28,15 +28,16 @@ export default async function AdminPage() {
 
   if (!dbUser || dbUser.role !== 'admin') redirect('/')
 
-  const [bookings, clients] = await Promise.all([
+  const [bookings, clients, calendarBookings] = await Promise.all([
     getAllBookings(),
     getAllClients(),
+    getAllBookingsForCalendar(),
   ])
 
   return (
     <>
       <Navigation />
-      <AdminDashboard bookings={bookings} clients={clients} adminName={session.user.name} />
+      <AdminDashboard bookings={bookings} clients={clients} adminName={session.user.name} calendarBookings={calendarBookings} />
       <Footer />
     </>
   )

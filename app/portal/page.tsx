@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { ClientPortalUI } from '@/components/portal/client-portal-ui'
+import { getMyBookingsForCalendar } from '@/app/actions/booking'
 import type { Metadata } from 'next'
 import type { FullBooking } from '@/lib/db/schema'
 
@@ -37,6 +38,7 @@ export default async function PortalPage() {
     .orderBy(desc(bookingV2.createdAt))
 
   let fullBookings: FullBooking[] = []
+  let calendarBookings: Array<{ bookingId: string; date: string; service: string }> = []
 
   if (coreBookings.length > 0) {
     const ids = coreBookings.map((b) => b.id)
@@ -57,6 +59,15 @@ export default async function PortalPage() {
       notesMap.set(n.bookingId, arr)
     }
 
+    // Build calendar bookings list
+    calendarBookings = events
+      .filter((e) => e.eventDate)
+      .map((e) => ({
+        bookingId: e.bookingId,
+        date: e.eventDate,
+        service: coreBookings.find((b) => b.id === e.bookingId)?.service || 'other',
+      }))
+
     fullBookings = coreBookings.map((b) => ({
       ...b,
       event:      eventsMap.get(b.id) ?? null,
@@ -68,7 +79,7 @@ export default async function PortalPage() {
   return (
     <>
       <Navigation />
-      <ClientPortalUI user={session.user} bookings={fullBookings} />
+      <ClientPortalUI user={session.user} bookings={fullBookings} calendarBookings={calendarBookings} />
       <Footer />
     </>
   )
