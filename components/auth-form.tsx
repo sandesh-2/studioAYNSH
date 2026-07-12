@@ -13,18 +13,50 @@ interface AuthFormProps {
   redirectTo?: string
 }
 
+// ── Validation helpers ────────────────────────────────────────────────────
+
+/**
+ * RFC 5322-compatible email regex.
+ * Checks structure: local-part @ domain . tld (2–10 chars).
+ */
+function isValidEmail(value: string): boolean {
+  const trimmed = value.trim().toLowerCase()
+  // Basic structural check
+  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,10}$/
+  if (!re.test(trimmed)) return false
+  // Must have at least one dot in domain part
+  const [, domain] = trimmed.split('@')
+  if (!domain || !domain.includes('.')) return false
+  // TLD must be at least 2 chars
+  const tld = domain.split('.').pop() ?? ''
+  if (tld.length < 2) return false
+  return true
+}
+
+/**
+ * Indian mobile number: exactly 10 digits, starts with 6–9.
+ */
+function isValidIndianPhone(digits: string): boolean {
+  return /^[6-9]\d{9}$/.test(digits)
+}
+
 export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  // phone stores only the 10 digits — the +91 prefix is fixed in the UI
+  const [phoneDigits, setPhoneDigits] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [passwordFocused, setPasswordFocused] = useState(false)
 
-  // Calculate password strength
+  // Inline field errors (shown after the user interacts with the field)
+  const [emailError, setEmailError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
+
+  // ── Password strength ──────────────────────────────────────────────────
   const getPasswordStrength = (pwd: string) => {
     if (!pwd) return { score: 0, label: '', color: '' }
     let score = 0
@@ -33,7 +65,6 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
     if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++
     if (/\d/.test(pwd)) score++
     if (/[^a-zA-Z\d]/.test(pwd)) score++
-    
     const levels = [
       { score: 0, label: '', color: '' },
       { score: 1, label: 'Weak', color: 'text-destructive' },
@@ -44,29 +75,68 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
     ]
     return levels[Math.min(score, 5)]
   }
-
   const strength = getPasswordStrength(password)
 
+  // ── Phone input handler — digits only, max 10 ─────────────────────────
+  function handlePhoneInput(raw: string) {
+    // Strip every non-digit character
+    const digits = raw.replace(/\D/g, '').slice(0, 10)
+    setPhoneDigits(digits)
+    if (phoneError && digits.length === 10) setPhoneError('')
+  }
+
+  function handlePhoneBlur() {
+    if (!phoneDigits) return // Phone is optional on sign-up
+    if (!isValidIndianPhone(phoneDigits)) {
+      setPhoneError('Enter a valid 10-digit Indian mobile number (starts with 6–9).')
+    } else {
+      setPhoneError('')
+    }
+  }
+
+  // ── Email blur validation ─────────────────────────────────────────────
+  function handleEmailBlur() {
+    if (!email) return
+    if (!isValidEmail(email)) {
+      setEmailError('Please enter a valid email address (e.g. name@domain.com).')
+    } else {
+      setEmailError('')
+    }
+  }
+
+  // ── Submit ────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    // Run all field validations eagerly before submitting
+    if (!isValidEmail(email)) {
+      setEmailError('Please enter a valid email address (e.g. name@domain.com).')
+      return
+    }
+
+    if (mode === 'sign-up') {
+      if (phoneDigits && !isValidIndianPhone(phoneDigits)) {
+        setPhoneError('Enter a valid 10-digit Indian mobile number (starts with 6–9).')
+        return
+      }
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters.')
+        return
+      }
+    }
+
     setLoading(true)
-
     try {
-      // Client-side validation before hitting the server
-      if (mode === 'sign-up' && password.length < 8) {
-        throw new Error('Password must be at least 8 characters.')
-      }
-      if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-        throw new Error('Please enter a valid email address.')
-      }
-
       if (mode === 'sign-up') {
-        // Check for duplicate email or phone number
         const trimmedEmail = email.trim().toLowerCase()
-        const trimmedPhone = phone.trim()
-        
-        const duplicationCheck = await checkDuplicateEmailOrPhone(trimmedEmail, trimmedPhone || undefined)
+        // Build the full phone string only when provided
+        const fullPhone = phoneDigits ? `+91${phoneDigits}` : ''
+
+        const duplicationCheck = await checkDuplicateEmailOrPhone(
+          trimmedEmail,
+          fullPhone || undefined,
+        )
         if (duplicationCheck.isDuplicate) {
           throw new Error(duplicationCheck.message || 'Email or phone number is already registered.')
         }
@@ -76,12 +146,12 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
           email: trimmedEmail,
           password,
           callbackURL: redirectTo,
-          ...(trimmedPhone && { phone: trimmedPhone.slice(0, 20) }),
+          ...(fullPhone && { phone: fullPhone }),
         } as Parameters<typeof authClient.signUp.email>[0])
         if (res.error) throw new Error(res.error.message)
       } else {
         const res = await authClient.signIn.email({
-          email,
+          email: email.trim().toLowerCase(),
           password,
           callbackURL: redirectTo,
         })
@@ -98,6 +168,8 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
 
   const inputClass =
     'w-full border-b border-border bg-transparent py-3 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none transition-colors duration-200'
+  const inputErrorClass =
+    'w-full border-b border-destructive bg-transparent py-3 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-destructive focus:outline-none transition-colors duration-200'
   const labelClass =
     'block font-sans text-xs font-medium tracking-[0.15em] uppercase text-foreground mb-2'
 
@@ -132,6 +204,7 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
         <form onSubmit={handleSubmit} className="space-y-6">
           {mode === 'sign-up' && (
             <>
+              {/* Full name */}
               <div>
                 <label className={labelClass}>Full Name</label>
                 <input
@@ -140,34 +213,70 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your full name"
                   required
+                  autoComplete="name"
                   className={inputClass}
                 />
               </div>
+
+              {/* Phone — fixed +91 prefix, exactly 10 digits */}
               <div>
-                <label className={labelClass}>Phone Number</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 00000 00000"
-                  className={inputClass}
-                />
+                <label className={labelClass}>
+                  Phone Number{' '}
+                  <span className="font-sans normal-case tracking-normal text-muted-foreground/50 text-[10px]">
+                    (optional)
+                  </span>
+                </label>
+                <div className={`flex items-stretch border-b ${phoneError ? 'border-destructive' : 'border-border focus-within:border-foreground'} transition-colors duration-200`}>
+                  {/* Fixed country code badge */}
+                  <span className="flex items-center pr-3 font-sans text-sm text-muted-foreground select-none whitespace-nowrap pt-3 pb-3">
+                    +91
+                  </span>
+                  <span className="flex items-center text-muted-foreground/40 pt-3 pb-3 pr-2 select-none">|</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={phoneDigits}
+                    onChange={(e) => handlePhoneInput(e.target.value)}
+                    onBlur={handlePhoneBlur}
+                    placeholder="10-digit mobile number"
+                    maxLength={10}
+                    autoComplete="tel-national"
+                    className="flex-1 bg-transparent py-3 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+                  />
+                  {/* Live digit counter */}
+                  <span className={`flex items-center pt-3 pb-3 font-sans text-xs tabular-nums select-none ml-2 ${
+                    phoneDigits.length === 10 ? 'text-green-600' : 'text-muted-foreground/40'
+                  }`}>
+                    {phoneDigits.length}/10
+                  </span>
+                </div>
+                {phoneError && (
+                  <p className="mt-1 font-sans text-xs text-destructive">{phoneError}</p>
+                )}
               </div>
             </>
           )}
 
+          {/* Email */}
           <div>
             <label className={labelClass}>Email Address</label>
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError('') }}
+              onBlur={handleEmailBlur}
               placeholder="you@example.com"
               required
-              className={inputClass}
+              autoComplete="email"
+              className={emailError ? inputErrorClass : inputClass}
             />
+            {emailError && (
+              <p className="mt-1 font-sans text-xs text-destructive">{emailError}</p>
+            )}
           </div>
 
+          {/* Password */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className={labelClass}>Password</label>
@@ -199,7 +308,6 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
-            {/* Password strength hints */}
             {mode === 'sign-up' && (password || passwordFocused) && (
               <div className="mt-2 space-y-1 text-xs text-muted-foreground/70">
                 <p className={password.length >= 8 ? 'text-green-600' : ''}>
