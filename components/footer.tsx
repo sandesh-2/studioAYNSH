@@ -48,7 +48,7 @@ const socialLinks = [
   },
   {
     key: 'whatsapp',
-    label: '+91 7084019414',
+    label: 'WhatsApp',
     href: 'https://wa.me/917084019414',
     external: true,
     hoverColor: '#25D366',
