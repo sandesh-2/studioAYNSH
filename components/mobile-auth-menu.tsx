@@ -5,39 +5,46 @@ import Link from 'next/link'
 import { useState, useCallback } from 'react'
 import { Home, BookImage, Info, Mail, X } from 'lucide-react'
 
-const LEFT_ITEMS = [
+/* ── Nav data ──────────────────────────────────────────────────────────────── */
+const LEFT_ITEMS  = [
   { label: 'Home',      href: '/',          icon: Home },
   { label: 'Portfolio', href: '/portfolio', icon: BookImage },
 ]
-
 const RIGHT_ITEMS = [
   { label: 'About',   href: '/about',   icon: Info },
   { label: 'Contact', href: '/contact', icon: Mail },
 ]
 
-const PILL_BASE: React.CSSProperties = {
-  background: 'oklch(0.08 0.005 45 / 0.88)',
-  backdropFilter: 'blur(20px) saturate(160%)',
-  WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-  border: '1px solid oklch(1 0 0 / 0.10)',
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+const GOLD        = 'oklch(0.78 0.065 70)'
+const GOLD_DIM    = 'oklch(0.78 0.065 70 / 0.22)'
+const GOLD_BORDER = 'oklch(0.78 0.065 70 / 0.40)'
+const WHITE_60    = 'oklch(1 0 0 / 0.65)'
+const DIVIDER     = 'oklch(1 0 0 / 0.13)'
+
+const PILL_STYLE: React.CSSProperties = {
+  background: 'oklch(0.08 0.005 45 / 0.90)',
+  backdropFilter: 'blur(24px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+  border: '1px solid oklch(1 0 0 / 0.11)',
   boxShadow:
-    '0 8px 28px oklch(0 0 0 / 0.40), 0 2px 6px oklch(0 0 0 / 0.20), inset 0 1px 0 oklch(1 0 0 / 0.08)',
+    '0 10px 36px oklch(0 0 0 / 0.45), 0 2px 8px oklch(0 0 0 / 0.22), inset 0 1px 0 oklch(1 0 0 / 0.09)',
   borderRadius: 9999,
+  overflow: 'hidden',
 }
 
-const GOLD        = 'oklch(0.78 0.065 70)'
-const GOLD_DIM    = 'oklch(0.78 0.065 70 / 0.18)'
-const GOLD_BORDER = 'oklch(0.78 0.065 70 / 0.32)'
-const WHITE_DIM   = 'oklch(1 0 0 / 0.60)'
-const DIVIDER     = 'oklch(1 0 0 / 0.12)'
-
+/* ── Main component ────────────────────────────────────────────────────────── */
 export function MobileAuthMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const reduced = useReducedMotion()
 
-  const spring = reduced
-    ? { type: 'tween' as const, duration: 0.01 }
-    : { type: 'spring' as const, stiffness: 420, damping: 38, mass: 0.7 }
+  /*
+   * Spring used for the pill morph (layout) and the close-button scale.
+   * Kept snappy so there's no perceived lag.
+   */
+  const morphSpring = reduced
+    ? { type: 'tween' as const, duration: 0 }
+    : { type: 'spring' as const, stiffness: 500, damping: 40, mass: 0.6 }
 
   const close  = useCallback(() => setIsOpen(false), [])
   const toggle = useCallback(() => setIsOpen((v) => !v), [])
@@ -45,205 +52,260 @@ export function MobileAuthMenu() {
   return (
     <div className="flex justify-center">
       {/*
-        Single persistent pill — layout prop lets Framer interpolate
-        the bounding box without remounting. overflow:hidden clips during morph.
-      */}
-      <motion.div
-        layout
-        transition={spring}
-        style={{ ...PILL_BASE, overflow: 'hidden' }}
-      >
-        <AnimatePresence mode="wait" initial={false}>
+       * Single persistent pill.
+       * `layout` tells Framer to smoothly interpolate its bounding box
+       * whenever its children change size — this is the morph.
+       */}
+      <motion.div layout transition={morphSpring} style={PILL_STYLE}>
 
-          {/* ── Collapsed pill ────────────────────────────────────── */}
-          {!isOpen && (
-            <motion.button
-              key="closed"
-              onClick={toggle}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reduced ? 0.01 : 0.10, ease: 'easeOut' }}
-              className="flex items-center gap-2 px-5 py-2.5 select-none focus:outline-none whitespace-nowrap"
-              aria-label="Open navigation menu"
-              aria-expanded={false}
-            >
-              <motion.span
-                animate={reduced ? {} : { opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                className="block w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ background: GOLD }}
-              />
-              <span
-                className="font-sans font-medium uppercase tracking-widest text-white/90"
-                style={{ fontSize: 11 }}
-              >
-                Menu
-              </span>
-            </motion.button>
-          )}
+        {/*
+         * AnimatePresence mode="sync" (default) so the exit animation of
+         * the open state and entry animation of the closed pill run at the
+         * same time — eliminates the close delay.
+         */}
+        <AnimatePresence initial={false}>
 
-          {/* ── Expanded island ───────────────────────────────────── */}
-          {isOpen && (
+          {isOpen ? (
+            /*
+             * ── EXPANDED ────────────────────────────────────────────────
+             *
+             * Layout: fixed 5-column grid
+             *   [left-pair]  [divider]  [close-btn-wrapper]  [divider]  [right-pair]
+             *
+             * The close-btn-wrapper is a FIXED-SIZE div (never animated for
+             * size) so its grid column width never changes — the X button
+             * animates entirely within that fixed box.
+             */
             <motion.div
               key="open"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: reduced ? 0.01 : 0.12, ease: 'easeOut' }}
-              /*
-                Grid layout: 2 left items | close btn | 2 right items
-                The close button occupies a fixed-width column in the exact
-                centre — it never shifts regardless of item animation state.
-                items-center vertically aligns all columns.
-              */
-              className="grid items-center px-2 py-1.5"
-              style={{ gridTemplateColumns: '1fr auto auto auto 1fr', gap: 0 }}
+              transition={{ duration: reduced ? 0 : 0.08, ease: 'easeOut' }}
+              className="grid items-center"
+              style={{
+                gridTemplateColumns: '1fr 1px auto 1px 1fr',
+                columnGap: 6,
+                padding: '8px 10px',
+              }}
             >
 
               {/* Left pair */}
-              <div className="flex items-center justify-end">
+              <div className="flex items-center justify-end gap-0.5">
                 {LEFT_ITEMS.map((item, i) => (
                   <NavItem
                     key={item.label}
                     item={item}
-                    delay={reduced ? 0 : i * 0.025}
-                    spring={spring}
+                    index={i}
                     origin="left"
+                    reduced={!!reduced}
                     onNavigate={close}
                   />
                 ))}
               </div>
 
-              {/* Left divider */}
+              {/* Left divider — fixed size, no layout shift */}
               <motion.span
-                initial={{ opacity: 0, scaleY: 0 }}
+                key="divL"
+                initial={{ opacity: 0, scaleY: 0.2 }}
                 animate={{ opacity: 1, scaleY: 1 }}
-                exit={{ opacity: 0, scaleY: 0 }}
-                transition={{ ...spring, delay: reduced ? 0 : 0.04 }}
-                className="block h-5 w-px mx-1 flex-shrink-0"
-                style={{ background: DIVIDER }}
+                exit={{ opacity: 0, scaleY: 0.2 }}
+                transition={{ duration: reduced ? 0 : 0.12 }}
+                style={{ display: 'block', height: 28, width: 1, background: DIVIDER, flexShrink: 0 }}
               />
 
               {/*
-                Close button — fixed size, absolutely centred in the grid.
-                Does NOT animate position — only opacity+scale from its own
-                keyframes, so it cannot shift other columns.
-              */}
-              <motion.button
-                onClick={toggle}
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                transition={{ ...spring, delay: reduced ? 0 : 0.03 }}
-                className="flex items-center justify-center rounded-full focus:outline-none flex-shrink-0"
+               * Close button wrapper — fixed 32×32 so the grid column
+               * NEVER changes width. The button itself animates scale/opacity
+               * purely visually inside this container.
+               */}
+              <div
                 style={{
-                  width: 24,
-                  height: 24,
-                  background: GOLD_DIM,
-                  border: `1px solid ${GOLD_BORDER}`,
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
                 }}
-                whileHover={{ scale: 1.15, background: 'oklch(0.78 0.065 70 / 0.28)' } as any}
-                whileTap={{ scale: 0.88 }}
-                aria-label="Close menu"
               >
-                <X size={11} strokeWidth={2.4} style={{ color: GOLD }} />
-              </motion.button>
+                <motion.button
+                  key="close-btn"
+                  onClick={toggle}
+                  initial={{ opacity: 0, scale: 0.4, rotate: -90 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.4, rotate: 90 }}
+                  transition={morphSpring}
+                  whileHover={{ scale: 1.12 }}
+                  whileTap={{ scale: 0.88 }}
+                  aria-label="Close navigation menu"
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    background: GOLD_DIM,
+                    border: `1px solid ${GOLD_BORDER}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  <X size={12} strokeWidth={2.5} style={{ color: GOLD }} />
+                </motion.button>
+              </div>
 
               {/* Right divider */}
               <motion.span
-                initial={{ opacity: 0, scaleY: 0 }}
+                key="divR"
+                initial={{ opacity: 0, scaleY: 0.2 }}
                 animate={{ opacity: 1, scaleY: 1 }}
-                exit={{ opacity: 0, scaleY: 0 }}
-                transition={{ ...spring, delay: reduced ? 0 : 0.04 }}
-                className="block h-5 w-px mx-1 flex-shrink-0"
-                style={{ background: DIVIDER }}
+                exit={{ opacity: 0, scaleY: 0.2 }}
+                transition={{ duration: reduced ? 0 : 0.12 }}
+                style={{ display: 'block', height: 28, width: 1, background: DIVIDER, flexShrink: 0 }}
               />
 
               {/* Right pair */}
-              <div className="flex items-center justify-start">
+              <div className="flex items-center justify-start gap-0.5">
                 {RIGHT_ITEMS.map((item, i) => (
                   <NavItem
                     key={item.label}
                     item={item}
-                    delay={reduced ? 0 : (i + 2) * 0.025}
-                    spring={spring}
+                    index={i + 2}
                     origin="right"
+                    reduced={!!reduced}
                     onNavigate={close}
                   />
                 ))}
               </div>
 
             </motion.div>
-          )}
 
+          ) : (
+
+            /*
+             * ── COLLAPSED ───────────────────────────────────────────────
+             */
+            <motion.button
+              key="closed"
+              onClick={toggle}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduced ? 0 : 0.08, ease: 'easeOut' }}
+              aria-label="Open navigation menu"
+              aria-expanded={false}
+              className="flex items-center gap-2 select-none focus:outline-none whitespace-nowrap"
+              style={{ padding: '10px 20px' }}
+            >
+              {/* Pulsing gold dot */}
+              <motion.span
+                animate={reduced ? {} : { opacity: [0.35, 1, 0.35], scale: [0.9, 1.1, 0.9] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  display: 'block',
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: GOLD,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: 'var(--font-sans, sans-serif)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: 'oklch(1 0 0 / 0.90)',
+                }}
+              >
+                Menu
+              </span>
+            </motion.button>
+
+          )}
         </AnimatePresence>
       </motion.div>
     </div>
   )
 }
 
-// ── Individual nav item ────────────────────────────────────────────────────────
-
+/* ── NavItem ───────────────────────────────────────────────────────────────── */
 type NavItemData = { label: string; href: string; icon: React.ElementType }
 
 function NavItem({
   item,
-  delay,
-  spring,
+  index,
   origin,
+  reduced,
   onNavigate,
 }: {
   item: NavItemData
-  delay: number
-  spring: object
+  index: number
   origin: 'left' | 'right'
+  reduced: boolean
   onNavigate: () => void
 }) {
   const [hovered, setHovered] = useState(false)
   const Icon = item.icon
 
+  /*
+   * "Hole" origin effect:
+   *   - starts scaled to 0 and offset toward the centre (items emerge from
+   *     a single point and spread outward)
+   *   - on exit, collapses back to centre with the same motion reversed
+   *
+   * Stagger is kept very short (20ms per item) so all four appear almost
+   * simultaneously — giving a burst feeling rather than a slow sequence.
+   */
+  const xOffset  = origin === 'left' ? -18 : 18
+  const delay    = reduced ? 0 : index * 0.020
+  const exitDelay = reduced ? 0 : (3 - index) * 0.015
+
   return (
     <motion.div
-      initial={{ opacity: 0, x: origin === 'left' ? -12 : 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: origin === 'left' ? -8 : 8 }}
-      transition={{ ...spring, delay }}
+      initial={{ opacity: 0, scale: 0.3, x: 0 }}
+      animate={{ opacity: 1, scale: 1, x: xOffset, transitionEnd: { x: 0 } }}
+      exit={{ opacity: 0, scale: 0.3, x: 0 }}
+      transition={{
+        opacity:  { duration: 0.14, delay, ease: 'easeOut' },
+        scale:    { type: 'spring', stiffness: 460, damping: 34, mass: 0.55, delay },
+        x:        { type: 'spring', stiffness: 400, damping: 32, mass: 0.55, delay },
+      }}
+      style={{ originX: origin === 'left' ? 1 : 0, originY: 0.5 }}
     >
       <Link
         href={item.href}
         onClick={onNavigate}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="flex flex-col items-center justify-center gap-0.5 rounded-full select-none focus:outline-none"
+        className="flex flex-col items-center justify-center focus:outline-none select-none"
         style={{
           padding: '6px 10px',
+          borderRadius: 9999,
           background: hovered ? GOLD_DIM : 'transparent',
           transition: 'background 0.15s ease',
+          minWidth: 44,
         }}
       >
         <Icon
-          size={14}
-          strokeWidth={1.8}
-          style={{
-            color: hovered ? GOLD : WHITE_DIM,
-            transition: 'color 0.15s ease',
-            flexShrink: 0,
-          }}
+          size={18}
+          strokeWidth={1.7}
+          style={{ color: hovered ? GOLD : WHITE_60, transition: 'color 0.15s ease', flexShrink: 0 }}
         />
-        {/*
-          Label: hidden on small screens (< sm = 640px), visible on sm+.
-          This prevents overflow clipping the last item on narrow phones.
-        */}
         <span
           className="hidden sm:block"
           style={{
-            fontSize: 8.5,
-            fontWeight: 500,
-            letterSpacing: '0.13em',
+            marginTop: 3,
+            fontSize: 9,
+            fontWeight: 600,
+            letterSpacing: '0.14em',
             textTransform: 'uppercase',
             lineHeight: 1,
-            color: hovered ? GOLD : WHITE_DIM,
+            color: hovered ? GOLD : WHITE_60,
             transition: 'color 0.15s ease',
             whiteSpace: 'nowrap',
           }}
