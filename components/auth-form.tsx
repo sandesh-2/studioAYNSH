@@ -2,6 +2,7 @@
 
 import { checkDuplicateEmailOrPhone } from '@/lib/actions/check-duplicates'
 import { authClient } from '@/lib/auth-client'
+import { MobileAuthMenu } from '@/components/mobile-auth-menu'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
@@ -180,6 +181,7 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
+      <MobileAuthMenu />
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
