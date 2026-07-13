@@ -200,9 +200,10 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
     if (step === 1) {
       valid = await trigger(['clientName', 'clientEmail', 'clientPhone'])
     } else if (step === 2) {
-      valid = await trigger(['service', 'eventDate', 'state', 'city'])
+      valid = await trigger(['service', 'eventDate', 'eventTime', 'state', 'city'])
       if (!selectedService) { valid = false }
       if (!selectedDate)    { valid = false }
+      if (!selectedTime)    { valid = false }
       if (!selectedState)   { valid = false }
       
       // On step 2, check that availability has been verified and date is available
@@ -561,17 +562,22 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
                   </div>
                 )}
 
-                {/* Preferred time — TimePicker has its own trigger */}
+                {/* Preferred time — required */}
                 <div>
-                  <label className={labelClass}>
-                    Preferred Time{' '}
-                    <span className="text-muted-foreground/50 normal-case tracking-normal">(optional)</span>
-                  </label>
+                  <label className={labelClass}>Preferred Time</label>
                   <TimePicker
                     value={selectedTime}
-                    onChange={(t) => setValue('eventTime', t)}
+                    onChange={(t) => setValue('eventTime', t, { shouldValidate: true })}
                     error={errors.eventTime?.message}
                   />
+                  {/* Hidden input so react-hook-form tracks and validates the value */}
+                  <input
+                    type="hidden"
+                    {...register('eventTime', { required: 'Please select a preferred time' })}
+                  />
+                  {errors.eventTime && (
+                    <p className="mt-1.5 font-sans text-xs text-destructive">{errors.eventTime.message}</p>
+                  )}
                 </div>
 
                 {/* State + City / Venue */}
@@ -672,48 +678,98 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
           </AnimatePresence>
         </div>
 
+        {/* ── Contact-to-Book gate ─────────────────────────────────────── */}
+        {/* Once availability is confirmed, the public booking form stops here.      */}
+        {/* Users must contact Studio AYNSH directly to complete their reservation. */}
+        <AnimatePresence>
+          {step === 2 && availabilityChecked && availabilityStatus?.available && (
+            <motion.div
+              key="contact-gate"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="mt-8 border border-accent/30 bg-accent/5 p-6 space-y-4"
+            >
+              <div className="space-y-1">
+                <p className="font-sans text-xs font-semibold tracking-[0.18em] uppercase text-accent">
+                  Date Available — Next Step
+                </p>
+                <p className="font-sans text-sm text-foreground/80 leading-relaxed">
+                  Your preferred date is available. To complete your reservation, please reach out to us directly. We will confirm all details and finalise your booking together.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                <a
+                  href="https://wa.me/917084019414"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 font-sans text-xs font-medium tracking-[0.16em] uppercase bg-foreground text-background px-6 py-3 hover:bg-accent hover:text-foreground transition-all duration-200"
+                >
+                  WhatsApp Us
+                </a>
+                <a
+                  href="mailto:samratgupta7754@gmail.com"
+                  className="inline-flex items-center justify-center gap-2 font-sans text-xs font-medium tracking-[0.16em] uppercase border border-foreground/30 text-foreground px-6 py-3 hover:border-accent hover:text-accent transition-all duration-200"
+                >
+                  Send an Email
+                </a>
+                <a
+                  href="/contact"
+                  className="inline-flex items-center justify-center gap-2 font-sans text-xs font-medium tracking-[0.16em] uppercase border border-foreground/30 text-foreground px-6 py-3 hover:border-accent hover:text-accent transition-all duration-200"
+                >
+                  Contact Page
+                </a>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* ── Navigation buttons ───────────────────────────────────────── */}
         {/* When logged in, step 2 is the first visible step so no Previous needed */}
-        <div className={`flex items-center mt-10 ${(step > 1 && !(loggedInUser && step === 2)) ? 'justify-between' : 'justify-end'}`}>
-          {step > 1 && !(loggedInUser && step === 2) && (
-            <button
-              type="button"
-              onClick={goPrev}
-              className="inline-flex items-center gap-2 font-sans text-xs font-medium tracking-[0.16em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200 group"
-            >
-              <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
-              Previous
-            </button>
-          )}
+        {/* Hide nav buttons on step 2 once availability is confirmed available    */}
+        {!(step === 2 && availabilityChecked && availabilityStatus?.available) && (
+          <div className={`flex items-center mt-10 ${(step > 1 && !(loggedInUser && step === 2)) ? 'justify-between' : 'justify-end'}`}>
+            {step > 1 && !(loggedInUser && step === 2) && (
+              <button
+                type="button"
+                onClick={goPrev}
+                className="inline-flex items-center gap-2 font-sans text-xs font-medium tracking-[0.16em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-200 group"
+              >
+                <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
+                Previous
+              </button>
+            )}
 
-          {step < 3 ? (
-            <button
-              type="button"
-              onClick={goNext}
-              className="inline-flex items-center gap-2 font-sans text-xs font-medium tracking-[0.16em] uppercase bg-foreground text-background px-8 py-3.5 hover:bg-accent hover:text-foreground transition-all duration-200 group"
-            >
-              Next
-              <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform duration-200" />
-            </button>
-          ) : (
-            <motion.button
-              type="submit"
-              disabled={submitting}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center gap-2 font-sans text-xs font-medium tracking-[0.18em] uppercase bg-foreground text-background px-10 py-3.5 hover:bg-accent hover:text-foreground disabled:opacity-50 transition-all duration-200"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 size={13} className="animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                'Submit Booking'
-              )}
-            </motion.button>
-          )}
-        </div>
+            {step < 3 ? (
+              <button
+                type="button"
+                onClick={goNext}
+                className="inline-flex items-center gap-2 font-sans text-xs font-medium tracking-[0.16em] uppercase bg-foreground text-background px-8 py-3.5 hover:bg-accent hover:text-foreground transition-all duration-200 group"
+              >
+                Next
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform duration-200" />
+              </button>
+            ) : (
+              <motion.button
+                type="submit"
+                disabled={submitting}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 font-sans text-xs font-medium tracking-[0.18em] uppercase bg-foreground text-background px-10 py-3.5 hover:bg-accent hover:text-foreground disabled:opacity-50 transition-all duration-200"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Booking'
+                )}
+              </motion.button>
+            )}
+          </div>
+        )}
 
         {/* Progress hint */}
         <p className="font-sans text-xs text-muted-foreground/50 text-center mt-6">
