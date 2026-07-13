@@ -27,7 +27,7 @@ const socialLinks = [
     label: '@studioaynsh',
     href: 'https://instagram.com/studioaynsh',
     external: true,
-    hoverGradient: 'linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d)',
+    hoverColor: '#E1306C',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -51,7 +51,7 @@ const socialLinks = [
     label: '+91 7084019414',
     href: 'https://wa.me/917084019414',
     external: true,
-    hoverGradient: 'linear-gradient(to right, #E5FFCC, #00E676)',
+    hoverColor: '#25D366',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -75,7 +75,7 @@ const socialLinks = [
     label: '+91 7084019414',
     href: 'tel:+917084019414',
     external: false,
-    hoverGradient: 'linear-gradient(135deg, #43E97B 0%, #38F9D7 100%)',
+    hoverColor: '#4A90E2',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -97,7 +97,7 @@ const socialLinks = [
     label: 'samratgupta7754@gmail.com',
     href: 'mailto:samratgupta7754@gmail.com',
     external: false,
-    hoverGradient: 'linear-gradient(to right, #4A00E0, #8E2DE2)',
+    hoverColor: '#EA4335',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -152,16 +152,10 @@ export function Footer() {
                     }}
                     onMouseEnter={(e) => {
                       const container = e.currentTarget as HTMLAnchorElement
-                      container.style.background = item.hoverGradient
-                      container.style.backgroundClip = 'text'
-                      ;(container.style as any).webkitBackgroundClip = 'text'
-                      container.style.color = 'transparent'
+                      container.style.color = item.hoverColor
                     }}
                     onMouseLeave={(e) => {
                       const container = e.currentTarget as HTMLAnchorElement
-                      container.style.background = 'transparent'
-                      container.style.backgroundClip = 'unset'
-                      ;(container.style as any).webkitBackgroundClip = 'unset'
                       container.style.color = 'inherit'
                     }}
                     aria-label={item.label}
