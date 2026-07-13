@@ -2,10 +2,8 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { Home, BookImage, Info, Mail, X } from 'lucide-react'
-
-// ─── Nav items ──────────────────────────────────────────────────────────────
 
 const LEFT_ITEMS = [
   { label: 'Home',      href: '/',          icon: Home },
@@ -17,185 +15,144 @@ const RIGHT_ITEMS = [
   { label: 'Contact', href: '/contact', icon: Mail },
 ]
 
-// ─── Ripple helper ──────────────────────────────────────────────────────────
-
-function useRipple() {
-  const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([])
-  const counter = useRef(0)
-
-  const addRipple = useCallback((e: React.MouseEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const id = ++counter.current
-    setRipples((prev) => [...prev, { id, x, y }])
-    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 600)
-  }, [])
-
-  return { ripples, addRipple }
+// Shared pill styles — reused in both states
+const PILL_BASE: React.CSSProperties = {
+  background: 'oklch(0.08 0.005 45 / 0.88)',
+  backdropFilter: 'blur(20px) saturate(160%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+  border: '1px solid oklch(1 0 0 / 0.10)',
+  boxShadow:
+    '0 8px 28px oklch(0 0 0 / 0.40), 0 2px 6px oklch(0 0 0 / 0.20), inset 0 1px 0 oklch(1 0 0 / 0.08)',
+  borderRadius: 9999,
 }
 
-// ─── Main component ─────────────────────────────────────────────────────────
+const GOLD = 'oklch(0.78 0.065 70)'
+const GOLD_DIM = 'oklch(0.78 0.065 70 / 0.18)'
+const GOLD_BORDER = 'oklch(0.78 0.065 70 / 0.32)'
+const WHITE_DIM = 'oklch(1 0 0 / 0.60)'
 
 export function MobileAuthMenu() {
   const [isOpen, setIsOpen] = useState(false)
-  const { ripples, addRipple } = useRipple()
-  const prefersReduced = useReducedMotion()
+  const reduced = useReducedMotion()
 
-  const toggle = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      addRipple(e)
-      setIsOpen((v) => !v)
-    },
-    [addRipple],
-  )
+  // Tight spring — fast enough to feel instant, slow enough to read
+  const spring = reduced
+    ? { type: 'tween' as const, duration: 0.01 }
+    : { type: 'spring' as const, stiffness: 500, damping: 42, mass: 0.8 }
 
   const close = useCallback(() => setIsOpen(false), [])
-
-  // Spring config — mirrors Apple's Dynamic Island spring feel
-  const spring = prefersReduced
-    ? { type: 'tween' as const, duration: 0.01 }
-    : { type: 'spring' as const, stiffness: 380, damping: 38, mass: 0.9 }
-
-  const stagger = prefersReduced ? 0 : 0.055
+  const toggle = useCallback(() => setIsOpen((v) => !v), [])
 
   return (
     <div className="flex justify-center">
-      {/* ── The single floating island ─────────────────────────────────────── */}
+      {/*
+        Single persistent pill — `layout` lets framer smoothly interpolate
+        its bounding box between the two inner size variants without
+        remounting anything. `overflow:hidden` clips content during morph.
+      */}
       <motion.div
         layout
-        layoutRoot
-        animate={{
-          width: isOpen ? 'auto' : 'auto',
-        }}
         transition={spring}
-        style={{
-          /* Black glass pill */
-          background: 'oklch(0.08 0.005 45 / 0.82)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          borderRadius: 9999,
-          border: '1px solid oklch(1 0 0 / 0.10)',
-          boxShadow:
-            '0 8px 32px oklch(0 0 0 / 0.35), 0 2px 8px oklch(0 0 0 / 0.18), inset 0 1px 0 oklch(1 0 0 / 0.08)',
-          overflow: 'hidden',
-        }}
-        className="relative"
+        style={{ ...PILL_BASE, overflow: 'hidden' }}
       >
-        {/* ── Collapsed: Menu pill ──────────────────────────────────────────── */}
         <AnimatePresence mode="wait" initial={false}>
           {!isOpen ? (
+            /* ─── Collapsed pill ──────────────────────────────────────── */
             <motion.button
-              key="menu-pill"
+              key="closed"
+              layout
               onClick={toggle}
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={{ ...spring, duration: prefersReduced ? 0.01 : undefined }}
-              className="relative flex items-center gap-2 px-5 py-2.5 overflow-hidden select-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduced ? 0.01 : 0.12, ease: 'easeOut' }}
+              className="flex items-center gap-2 px-5 py-2.5 select-none focus:outline-none"
               aria-label="Open navigation menu"
               aria-expanded={false}
             >
-              {/* Ripple layer */}
-              {ripples.map((r) => (
-                <span
-                  key={r.id}
-                  className="pointer-events-none absolute rounded-full bg-white/15 animate-ping"
-                  style={{
-                    width: 80,
-                    height: 80,
-                    top: r.y - 40,
-                    left: r.x - 40,
-                    animationDuration: '0.55s',
-                    animationTimingFunction: 'ease-out',
-                    animationIterationCount: 1,
-                  }}
-                />
-              ))}
-
-              {/* Pill shimmer dot */}
+              {/* Pulsing gold dot */}
               <motion.span
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ background: 'oklch(0.78 0.065 70)' }}
+                animate={reduced ? {} : { opacity: [0.4, 1, 0.4] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                className="block w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ background: GOLD }}
               />
-
-              {/* Label */}
               <span
-                className="font-sans font-medium tracking-[0.18em] uppercase text-white/90"
-                style={{ fontSize: 11, letterSpacing: '0.18em' }}
+                className="font-sans font-medium uppercase tracking-widest text-white/90 whitespace-nowrap"
+                style={{ fontSize: 11 }}
               >
                 Menu
               </span>
             </motion.button>
+
           ) : (
 
-            /* ── Expanded: Dynamic Island ──────────────────────────────────── */
+            /* ─── Expanded island ─────────────────────────────────────── */
             <motion.div
-              key="island-expanded"
+              key="open"
+              layout
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: prefersReduced ? 0.01 : 0.18 }}
-              className="flex items-center gap-1 px-3 py-2"
+              transition={{ duration: reduced ? 0.01 : 0.14, ease: 'easeOut' }}
+              className="flex items-center px-2 py-1.5"
             >
               {/* Left items */}
-              <div className="flex items-center gap-0.5">
-                {LEFT_ITEMS.map((item, i) => (
-                  <IslandNavItem
-                    key={item.label}
-                    item={item}
-                    delay={i * stagger}
-                    spring={spring}
-                    onNavigate={close}
-                    origin="left"
-                  />
-                ))}
-              </div>
-
-              {/* Center close button */}
-              <motion.button
-                onClick={(e) => { addRipple(e); close() }}
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ ...spring, delay: stagger * 1.5 }}
-                className="relative mx-2 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full overflow-hidden"
-                style={{
-                  background: 'oklch(0.78 0.065 70 / 0.20)',
-                  border: '1px solid oklch(0.78 0.065 70 / 0.35)',
-                }}
-                aria-label="Close menu"
-                whileHover={{ scale: 1.12 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                {ripples.map((r) => (
-                  <span
-                    key={r.id}
-                    className="pointer-events-none absolute rounded-full bg-white/20 animate-ping"
-                    style={{ width: 40, height: 40, top: r.y - 20, left: r.x - 20, animationDuration: '0.45s', animationIterationCount: 1 }}
-                  />
-                ))}
-                <X
-                  size={13}
-                  strokeWidth={2.2}
-                  style={{ color: 'oklch(0.78 0.065 70)' }}
+              {LEFT_ITEMS.map((item, i) => (
+                <NavItem
+                  key={item.label}
+                  item={item}
+                  delay={reduced ? 0 : i * 0.03}
+                  spring={spring}
+                  origin="left"
+                  onNavigate={close}
                 />
+              ))}
+
+              {/* Divider */}
+              <motion.span
+                initial={{ opacity: 0, scaleY: 0 }}
+                animate={{ opacity: 1, scaleY: 1 }}
+                transition={{ ...spring, delay: reduced ? 0 : 0.06 }}
+                className="mx-1 block h-5 w-px flex-shrink-0"
+                style={{ background: 'oklch(1 0 0 / 0.12)' }}
+              />
+
+              {/* Close button */}
+              <motion.button
+                onClick={toggle}
+                initial={{ opacity: 0, scale: 0.6, rotate: -45 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ ...spring, delay: reduced ? 0 : 0.04 }}
+                className="mx-1.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full focus:outline-none"
+                style={{ background: GOLD_DIM, border: `1px solid ${GOLD_BORDER}` }}
+                whileHover={{ scale: 1.15, background: 'oklch(0.78 0.065 70 / 0.28)' } as any}
+                whileTap={{ scale: 0.88 }}
+                aria-label="Close menu"
+              >
+                <X size={11} strokeWidth={2.4} style={{ color: GOLD }} />
               </motion.button>
 
+              {/* Divider */}
+              <motion.span
+                initial={{ opacity: 0, scaleY: 0 }}
+                animate={{ opacity: 1, scaleY: 1 }}
+                transition={{ ...spring, delay: reduced ? 0 : 0.06 }}
+                className="mx-1 block h-5 w-px flex-shrink-0"
+                style={{ background: 'oklch(1 0 0 / 0.12)' }}
+              />
+
               {/* Right items */}
-              <div className="flex items-center gap-0.5">
-                {RIGHT_ITEMS.map((item, i) => (
-                  <IslandNavItem
-                    key={item.label}
-                    item={item}
-                    delay={(i + 2) * stagger}
-                    spring={spring}
-                    onNavigate={close}
-                    origin="right"
-                  />
-                ))}
-              </div>
+              {RIGHT_ITEMS.map((item, i) => (
+                <NavItem
+                  key={item.label}
+                  item={item}
+                  delay={reduced ? 0 : (i + 2) * 0.03}
+                  spring={spring}
+                  origin="right"
+                  onNavigate={close}
+                />
+              ))}
             </motion.div>
           )}
         </AnimatePresence>
@@ -204,31 +161,31 @@ export function MobileAuthMenu() {
   )
 }
 
-// ─── Individual nav item inside the island ───────────────────────────────────
+// ─── Individual nav item ──────────────────────────────────────────────────────
 
 type NavItem = { label: string; href: string; icon: React.ElementType }
 
-function IslandNavItem({
+function NavItem({
   item,
   delay,
   spring,
-  onNavigate,
   origin,
+  onNavigate,
 }: {
   item: NavItem
   delay: number
   spring: object
-  onNavigate: () => void
   origin: 'left' | 'right'
+  onNavigate: () => void
 }) {
   const [hovered, setHovered] = useState(false)
   const Icon = item.icon
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: origin === 'left' ? -18 : 18, scale: 0.85 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: origin === 'left' ? -12 : 12, scale: 0.85 }}
+      initial={{ opacity: 0, x: origin === 'left' ? -14 : 14 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: origin === 'left' ? -8 : 8 }}
       transition={{ ...spring, delay }}
     >
       <Link
@@ -236,45 +193,32 @@ function IslandNavItem({
         onClick={onNavigate}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="relative flex flex-col items-center gap-1 px-3.5 py-2 rounded-full select-none outline-none"
+        className="flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-full select-none focus:outline-none"
         style={{
-          background: hovered ? 'oklch(0.78 0.065 70 / 0.15)' : 'transparent',
-          transition: 'background 0.18s ease',
+          minWidth: 52,
+          background: hovered ? GOLD_DIM : 'transparent',
+          transition: 'background 0.15s ease',
         }}
       >
-        {/* Active indicator glow */}
-        <motion.div
-          animate={{ opacity: hovered ? 1 : 0, scale: hovered ? 1 : 0.7 }}
-          transition={{ duration: 0.15 }}
-          className="absolute inset-0 rounded-full"
-          style={{
-            boxShadow: 'inset 0 0 12px oklch(0.78 0.065 70 / 0.12)',
-            border: '1px solid oklch(0.78 0.065 70 / 0.22)',
-          }}
-        />
-
         <Icon
-          size={14}
-          strokeWidth={1.8}
+          size={13}
+          strokeWidth={1.9}
           style={{
-            color: hovered
-              ? 'oklch(0.85 0.055 70)'
-              : 'oklch(1 0 0 / 0.65)',
-            transition: 'color 0.18s ease',
+            color: hovered ? GOLD : WHITE_DIM,
+            transition: 'color 0.15s ease',
+            flexShrink: 0,
           }}
         />
         <span
           style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: 9.5,
+            fontSize: 8.5,
             fontWeight: 500,
-            letterSpacing: '0.12em',
+            letterSpacing: '0.13em',
             textTransform: 'uppercase',
-            color: hovered
-              ? 'oklch(0.85 0.055 70)'
-              : 'oklch(1 0 0 / 0.65)',
-            transition: 'color 0.18s ease',
             lineHeight: 1,
+            color: hovered ? GOLD : WHITE_DIM,
+            transition: 'color 0.15s ease',
+            whiteSpace: 'nowrap',
           }}
         >
           {item.label}
