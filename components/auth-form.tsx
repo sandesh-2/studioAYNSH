@@ -189,8 +189,8 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
       >
         {/* Header */}
         <div className="text-center mb-12">
-          {/* 3D Menu Button — positioned above Studio AYNSH */}
-          <div className="mb-6 flex justify-center">
+          {/* Dynamic Island navigation — floats above Studio AYNSH */}
+          <div className="mb-7">
             <MobileAuthMenu />
           </div>
           <Link href="/" className="inline-block font-serif text-2xl text-foreground tracking-widest mb-2">
