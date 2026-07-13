@@ -96,40 +96,7 @@ export default async function BookingPage() {
                 </Link>
               </div>
 
-              {/* Contact details */}
-              <div className="space-y-6">
-                <div className="border-t border-border pt-6">
-                  <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-1">Direct Line</p>
-                  <a href="tel:+917084019414" className="font-serif text-foreground text-xl hover:text-accent transition-colors duration-200">
-                    +91 7084019414
-                  </a>
-                </div>
-                <div className="border-t border-border pt-6">
-                  <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-1">Email</p>
-                  <a href="mailto:samratgupta7754@gmail.com" className="font-serif text-foreground text-xl hover:text-accent transition-colors duration-200">
-                    samratgupta7754@gmail.com
-                  </a>
-                </div>
-                <div className="border-t border-border pt-6">
-                  <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-1">WhatsApp</p>
-                  <a
-                    href="https://wa.me/917084019414"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-serif text-foreground text-xl hover:text-accent transition-colors duration-200"
-                  >
-                    Chat on WhatsApp
-                  </a>
-                </div>
-                <div className="border-t border-border pt-6">
-                  <p className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground/60 mb-1">Studio</p>
-                  <address className="font-sans text-sm text-muted-foreground not-italic leading-relaxed">
-                    Bhagat Chauraha, Rampur Road<br />
-                    Taramandal, Gorakhpur<br />
-                    Uttar Pradesh — 273016
-                  </address>
-                </div>
-              </div>
+
             </div>
 
             {/* Right: Form */}

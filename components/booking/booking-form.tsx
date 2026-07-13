@@ -679,10 +679,10 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
         </div>
 
         {/* ── Contact-to-Book gate ─────────────────────────────────────── */}
-        {/* Once availability is confirmed, the public booking form stops here.      */}
-        {/* Users must contact Studio AYNSH directly to complete their reservation. */}
+        {/* If availability is NOT confirmed, the public booking form stops here.    */}
+        {/* Users must contact Studio AYNSH directly when dates aren't available.   */}
         <AnimatePresence>
-          {step === 2 && availabilityChecked && availabilityStatus?.available && (
+          {step === 2 && availabilityChecked && !availabilityStatus?.available && (
             <motion.div
               key="contact-gate"
               initial={{ opacity: 0, y: 12 }}
@@ -693,10 +693,10 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
             >
               <div className="space-y-1">
                 <p className="font-sans text-xs font-semibold tracking-[0.18em] uppercase text-accent">
-                  Date Available — Next Step
+                  Date Unavailable
                 </p>
                 <p className="font-sans text-sm text-foreground/80 leading-relaxed">
-                  Your preferred date is available. To complete your reservation, please reach out to us directly. We will confirm all details and finalise your booking together.
+                  Unfortunately, your preferred date is not available at this time. Please reach out to us directly and we&apos;ll help you find an alternative date that works perfectly for your session.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 pt-1">
@@ -727,8 +727,8 @@ export function BookingForm({ loggedInUser }: { loggedInUser?: LoggedInUser | nu
 
         {/* ── Navigation buttons ───────────────────────────────────────── */}
         {/* When logged in, step 2 is the first visible step so no Previous needed */}
-        {/* Hide nav buttons on step 2 once availability is confirmed available    */}
-        {!(step === 2 && availabilityChecked && availabilityStatus?.available) && (
+        {/* Hide nav buttons on step 2 if availability is unavailable             */}
+        {!(step === 2 && availabilityChecked && !availabilityStatus?.available) && (
           <div className={`flex items-center mt-10 ${(step > 1 && !(loggedInUser && step === 2)) ? 'justify-between' : 'justify-end'}`}>
             {step > 1 && !(loggedInUser && step === 2) && (
               <button
