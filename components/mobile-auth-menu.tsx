@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useState } from 'react'
-import { Menu, X, Home, Image, Info, Mail } from 'lucide-react'
+import { Home, Image, Info, Mail } from 'lucide-react'
 
 export function MobileAuthMenu() {
   const [isOpen, setIsOpen] = useState(false)
@@ -34,7 +34,7 @@ export function MobileAuthMenu() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: 0.08,
         delayChildren: 0.1,
       },
     },
@@ -49,87 +49,51 @@ export function MobileAuthMenu() {
 
   // Individual menu item slide animation
   const itemVariants = {
-    hidden: (direction: 'left' | 'right') => ({
+    hiddenLeft: {
       opacity: 0,
-      x: direction === 'left' ? -100 : 100,
+      x: -60,
       y: 20,
-    }),
+    },
+    hiddenRight: {
+      opacity: 0,
+      x: 60,
+      y: 20,
+    },
     visible: {
       opacity: 1,
       x: 0,
       y: 0,
     },
-    exit: (direction: 'left' | 'right') => ({
+    exitLeft: {
       opacity: 0,
-      x: direction === 'left' ? -100 : 100,
+      x: -60,
       y: 20,
-    }),
-  }
-
-  // Center button rotation and scale
-  const buttonVariants = {
-    closed: { rotate: 0, scale: 1 },
-    open: { rotate: 90, scale: 1.1 },
+    },
+    exitRight: {
+      opacity: 0,
+      x: 60,
+      y: 20,
+    },
   }
 
   return (
     <>
-      {/* Center menu button */}
-      <motion.div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
-        initial="closed"
-        animate={isOpen ? 'open' : 'closed'}
-        variants={buttonVariants}
-        transition={{ duration: 0.3 }}
-      >
-        <button
-          onClick={toggleMenu}
-          className="p-4 rounded-full bg-foreground text-background shadow-2xl hover:shadow-2xl transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
-          aria-label={isOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={isOpen}
-        >
-          <AnimatePresence mode="wait">
-            {isOpen ? (
-              <motion.div
-                key="close"
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <X size={24} strokeWidth={2} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="menu"
-                initial={{ rotate: 90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: -90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Menu size={24} strokeWidth={2} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </button>
-      </motion.div>
-
-      {/* Menu overlay background */}
+      {/* Backdrop overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={closeMenu}
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
             aria-hidden="true"
           />
         )}
       </AnimatePresence>
 
-      {/* Menu items container */}
+      {/* Menu items container — splits left and right */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -146,21 +110,19 @@ export function MobileAuthMenu() {
                 return (
                   <motion.div
                     key={item.label}
-                    custom="left"
+                    initial="hiddenLeft"
+                    animate="visible"
+                    exit="exitLeft"
                     variants={itemVariants}
-                    transition={{ type: 'spring', stiffness: 100, damping: 12 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 120, damping: 15 }}
                   >
                     <Link
                       href={item.href}
                       onClick={closeMenu}
-                      className="inline-flex items-center gap-3 text-foreground font-sans text-sm font-medium tracking-wide hover:text-foreground/80 transition-colors duration-200"
+                      className="group inline-flex items-center gap-4 px-6 py-3 bg-card border border-border rounded-lg hover:border-accent hover:bg-accent/5 transition-all duration-300"
                     >
-                      <div className="p-2 bg-foreground/5 rounded-lg hover:bg-foreground/10 transition-colors">
-                        <Icon size={20} strokeWidth={1.5} />
-                      </div>
-                      <span>{item.label}</span>
+                      <Icon className="w-5 h-5 text-accent group-hover:text-foreground transition-colors" />
+                      <span className="font-sans text-sm font-medium text-foreground tracking-wide">{item.label}</span>
                     </Link>
                   </motion.div>
                 )
@@ -168,27 +130,25 @@ export function MobileAuthMenu() {
             </motion.div>
 
             {/* Right side menu items */}
-            <motion.div className="flex flex-col gap-6 pointer-events-auto text-right">
+            <motion.div className="flex flex-col gap-6 pointer-events-auto">
               {menuItems[1].items.map((item) => {
                 const Icon = item.icon
                 return (
                   <motion.div
                     key={item.label}
-                    custom="right"
+                    initial="hiddenRight"
+                    animate="visible"
+                    exit="exitRight"
                     variants={itemVariants}
-                    transition={{ type: 'spring', stiffness: 100, damping: 12 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 120, damping: 15 }}
                   >
                     <Link
                       href={item.href}
                       onClick={closeMenu}
-                      className="inline-flex items-center gap-3 text-foreground font-sans text-sm font-medium tracking-wide hover:text-foreground/80 transition-colors duration-200 flex-row-reverse"
+                      className="group inline-flex items-center gap-4 px-6 py-3 bg-card border border-border rounded-lg hover:border-accent hover:bg-accent/5 transition-all duration-300"
                     >
-                      <div className="p-2 bg-foreground/5 rounded-lg hover:bg-foreground/10 transition-colors">
-                        <Icon size={20} strokeWidth={1.5} />
-                      </div>
-                      <span>{item.label}</span>
+                      <Icon className="w-5 h-5 text-accent group-hover:text-foreground transition-colors" />
+                      <span className="font-sans text-sm font-medium text-foreground tracking-wide">{item.label}</span>
                     </Link>
                   </motion.div>
                 )
@@ -197,6 +157,52 @@ export function MobileAuthMenu() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 3D Menu Button — returns element to be placed in header */}
+      <div className="inline-block mb-8">
+        <motion.button
+          onClick={toggleMenu}
+          className="relative px-6 py-3 font-sans font-semibold text-xs tracking-widest uppercase text-foreground"
+          style={{
+            background: 'linear-gradient(to bottom, var(--accent), var(--gold))',
+            borderRadius: '6px',
+            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+          }}
+          whileHover={{
+            y: -3,
+            boxShadow: '0 12px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+          }}
+          whileTap={{
+            y: -1,
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+          }}
+          transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+          aria-label={isOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={isOpen}
+        >
+          {/* Top 3D shine effect */}
+          <div
+            className="absolute inset-x-0 top-0 h-1 bg-gradient-to-b from-white/20 to-transparent pointer-events-none"
+            style={{ borderRadius: '6px 6px 0 0' }}
+          />
+
+          {/* Button text with icon rotation */}
+          <motion.div
+            animate={{ rotate: isOpen ? 90 : 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+          >
+            {isOpen ? (
+              <span className="text-lg">✕</span>
+            ) : (
+              <span>Menu</span>
+            )}
+          </motion.div>
+
+          {/* Bottom 3D shadow effect */}
+          <div className="absolute -bottom-2 left-2 right-2 h-1 bg-black/15 blur-md pointer-events-none" style={{ borderRadius: '50%' }} />
+        </motion.button>
+      </div>
     </>
   )
 }

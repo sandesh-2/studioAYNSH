@@ -181,7 +181,6 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
-      <MobileAuthMenu />
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -190,6 +189,10 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
       >
         {/* Header */}
         <div className="text-center mb-12">
+          {/* 3D Menu Button — positioned above Studio AYNSH */}
+          <div className="mb-6 flex justify-center">
+            <MobileAuthMenu />
+          </div>
           <Link href="/" className="inline-block font-serif text-2xl text-foreground tracking-widest mb-2">
             STUDIO AYNSH
           </Link>
