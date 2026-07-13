@@ -55,8 +55,8 @@ const socialLinks = [
     label: '+91 7084019414',
     href: 'https://wa.me/917084019414',
     external: true,
-    // On hover: WhatsApp green
-    hoverClass: 'hover:text-[#25D366]',
+    // On hover: yellowish-orange
+    hoverClass: 'hover:text-[#FFA500]',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -69,8 +69,12 @@ const socialLinks = [
         className="w-4 h-4 flex-shrink-0"
         aria-hidden="true"
       >
-        {/* Rounded chat bubble */}
-        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+        {/* Speech bubble outline */}
+        <path d="M21 12a9 9 0 0 1-9 9 9.5 9.5 0 0 1-4-1L3 21l2-6a9 9 0 0 1 16-3z" />
+        {/* Phone icon inside bubble */}
+        <path d="M10 10h4a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2z" fill="currentColor" opacity="0.3" />
+        <path d="M11 11c-.3-.5-.5-1.1-.5-1.7V8" />
+        <path d="M13 11c.3-.5.5-1.1.5-1.7V8" />
       </svg>
     ),
   },
@@ -79,8 +83,8 @@ const socialLinks = [
     label: '+91 7084019414',
     href: 'tel:+917084019414',
     external: false,
-    // On hover: a warm green-blue (telephone/call blue)
-    hoverClass: 'hover:text-[#4CAF50]',
+    // On hover: yellowish-orange
+    hoverClass: 'hover:text-[#FFA500]',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
