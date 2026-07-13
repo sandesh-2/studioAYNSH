@@ -27,8 +27,7 @@ const socialLinks = [
     label: '@studioaynsh',
     href: 'https://instagram.com/studioaynsh',
     external: true,
-    // On hover: Instagram gradient — magenta to orange
-    hoverClass: 'hover:text-[#E1306C]',
+    hoverGradient: 'linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d)',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -41,11 +40,8 @@ const socialLinks = [
         className="w-4 h-4 flex-shrink-0"
         aria-hidden="true"
       >
-        {/* Square body */}
         <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-        {/* Circle (lens) */}
         <circle cx="12" cy="12" r="4" />
-        {/* Flash dot */}
         <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
       </svg>
     ),
@@ -55,8 +51,7 @@ const socialLinks = [
     label: '+91 7084019414',
     href: 'https://wa.me/917084019414',
     external: true,
-    // On hover: yellowish-orange
-    hoverClass: 'hover:text-[#FFA500]',
+    hoverGradient: 'linear-gradient(to right, #E5FFCC, #00E676)',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -69,12 +64,9 @@ const socialLinks = [
         className="w-4 h-4 flex-shrink-0"
         aria-hidden="true"
       >
-        {/* Speech bubble outline */}
-        <path d="M21 12a9 9 0 0 1-9 9 9.5 9.5 0 0 1-4-1L3 21l2-6a9 9 0 0 1 16-3z" />
-        {/* Phone icon inside bubble */}
-        <path d="M10 10h4a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2z" fill="currentColor" opacity="0.3" />
-        <path d="M11 11c-.3-.5-.5-1.1-.5-1.7V8" />
-        <path d="M13 11c.3-.5.5-1.1.5-1.7V8" />
+        <path d="M17 10.5c0-.83-.67-1.5-1.5-1.5h-8c-.83 0-1.5.67-1.5 1.5v5c0 .83.67 1.5 1.5 1.5H14l2.5 1.5v-3.5c0 .83.67 1.5 1.5 1.5h-2.5v-1.5" fill="currentColor" opacity="0.2" stroke="none" />
+        <path d="M17 10.5c0-.83-.67-1.5-1.5-1.5h-8c-.83 0-1.5.67-1.5 1.5v5c0 .83.67 1.5 1.5 1.5H14l2.5 1.5v-3.5c.83 0 1.5-.67 1.5-1.5" stroke="currentColor" fill="none" />
+        <path d="M10 13.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5.22.5.5.5.5-.22.5-.5m2 0c0-.28-.22-.5-.5-.5s-.5.22-.5.5.22.5.5.5.5-.22.5-.5m2 0c0-.28-.22-.5-.5-.5s-.5.22-.5.5.22.5.5.5.5-.22.5-.5" fill="currentColor" stroke="none" />
       </svg>
     ),
   },
@@ -83,8 +75,7 @@ const socialLinks = [
     label: '+91 7084019414',
     href: 'tel:+917084019414',
     external: false,
-    // On hover: yellowish-orange
-    hoverClass: 'hover:text-[#FFA500]',
+    hoverGradient: 'linear-gradient(135deg, #43E97B 0%, #38F9D7 100%)',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -106,8 +97,7 @@ const socialLinks = [
     label: 'samratgupta7754@gmail.com',
     href: 'mailto:samratgupta7754@gmail.com',
     external: false,
-    // On hover: Gmail red
-    hoverClass: 'hover:text-[#EA4335]',
+    hoverGradient: 'linear-gradient(to right, #4A00E0, #8E2DE2)',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -120,9 +110,7 @@ const socialLinks = [
         className="w-4 h-4 flex-shrink-0"
         aria-hidden="true"
       >
-        {/* Envelope body */}
         <rect x="2" y="4" width="20" height="16" rx="2" />
-        {/* Chevron / fold line */}
         <polyline points="2,4 12,13 22,4" />
       </svg>
     ),
@@ -158,7 +146,24 @@ export function Footer() {
                     href={item.href}
                     target={item.external ? '_blank' : undefined}
                     rel={item.external ? 'noopener noreferrer' : undefined}
-                    className={`group inline-flex items-center gap-2.5 font-sans text-sm text-background/50 transition-colors duration-200 ${item.hoverClass}`}
+                    className="group inline-flex items-center gap-2.5 font-sans text-sm text-background/50 transition-all duration-300"
+                    style={{
+                      background: 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      const container = e.currentTarget as HTMLAnchorElement
+                      container.style.background = item.hoverGradient
+                      container.style.backgroundClip = 'text'
+                      ;(container.style as any).webkitBackgroundClip = 'text'
+                      container.style.color = 'transparent'
+                    }}
+                    onMouseLeave={(e) => {
+                      const container = e.currentTarget as HTMLAnchorElement
+                      container.style.background = 'transparent'
+                      container.style.backgroundClip = 'unset'
+                      ;(container.style as any).webkitBackgroundClip = 'unset'
+                      container.style.color = 'inherit'
+                    }}
                     aria-label={item.label}
                   >
                     {item.icon}
