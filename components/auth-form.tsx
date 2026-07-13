@@ -82,11 +82,15 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
     // Strip every non-digit character
     const digits = raw.replace(/\D/g, '').slice(0, 10)
     setPhoneDigits(digits)
-    if (phoneError && digits.length === 10) setPhoneError('')
+    // Clear error as soon as the user starts typing (or completes a valid number)
+    if (phoneError && digits.length > 0) setPhoneError('')
   }
 
   function handlePhoneBlur() {
-    if (!phoneDigits) return // Phone is optional on sign-up
+    if (!phoneDigits) {
+      setPhoneError('Phone number is required.')
+      return
+    }
     if (!isValidIndianPhone(phoneDigits)) {
       setPhoneError('Enter a valid 10-digit Indian mobile number (starts with 6–9).')
     } else {
@@ -116,7 +120,11 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
     }
 
     if (mode === 'sign-up') {
-      if (phoneDigits && !isValidIndianPhone(phoneDigits)) {
+      if (!phoneDigits) {
+        setPhoneError('Phone number is required.')
+        return
+      }
+      if (!isValidIndianPhone(phoneDigits)) {
         setPhoneError('Enter a valid 10-digit Indian mobile number (starts with 6–9).')
         return
       }
@@ -130,13 +138,10 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
     try {
       if (mode === 'sign-up') {
         const trimmedEmail = email.trim().toLowerCase()
-        // Build the full phone string only when provided
-        const fullPhone = phoneDigits ? `+91${phoneDigits}` : ''
+        // Phone is required — always build the full E.164 string
+        const fullPhone = `+91${phoneDigits}`
 
-        const duplicationCheck = await checkDuplicateEmailOrPhone(
-          trimmedEmail,
-          fullPhone || undefined,
-        )
+        const duplicationCheck = await checkDuplicateEmailOrPhone(trimmedEmail, fullPhone)
         if (duplicationCheck.isDuplicate) {
           throw new Error(duplicationCheck.message || 'Email or phone number is already registered.')
         }
@@ -146,7 +151,7 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
           email: trimmedEmail,
           password,
           callbackURL: redirectTo,
-          ...(fullPhone && { phone: fullPhone }),
+          phone: fullPhone,
         } as Parameters<typeof authClient.signUp.email>[0])
         if (res.error) throw new Error(res.error.message)
       } else {
@@ -218,14 +223,9 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
                 />
               </div>
 
-              {/* Phone — fixed +91 prefix, exactly 10 digits */}
+              {/* Phone — fixed +91 prefix, exactly 10 digits, required */}
               <div>
-                <label className={labelClass}>
-                  Phone Number{' '}
-                  <span className="font-sans normal-case tracking-normal text-muted-foreground/50 text-[10px]">
-                    (optional)
-                  </span>
-                </label>
+                <label className={labelClass}>Phone Number</label>
                 <div className={`flex items-stretch border-b ${phoneError ? 'border-destructive' : 'border-border focus-within:border-foreground'} transition-colors duration-200`}>
                   {/* Fixed country code badge */}
                   <span className="flex items-center pr-3 font-sans text-sm text-muted-foreground select-none whitespace-nowrap pt-3 pb-3">
@@ -240,6 +240,7 @@ export function AuthForm({ mode, redirectTo = '/portal' }: AuthFormProps) {
                     onChange={(e) => handlePhoneInput(e.target.value)}
                     onBlur={handlePhoneBlur}
                     placeholder="10-digit mobile number"
+                    required
                     maxLength={10}
                     autoComplete="tel-national"
                     className="flex-1 bg-transparent py-3 font-sans text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
