@@ -228,38 +228,7 @@ export async function getMyBookingsForCalendar() {
   }
 }
 
-// ── getAllBookingsForCalendar ──────────────────────────────────────────────
-// Returns all bookings with client names for admin calendar view
-
-export async function getAllBookingsForCalendar() {
-  try {
-    const userId = await getRequiredUserId()
-    
-    // Verify user is admin
-    const headersList = await headers()
-    const session = await auth.api.getSession({ headers: headersList })
-    if (!session?.user) throw new Error('Unauthorized')
-
-    const bookings = await db
-      .select({
-        id: bookingV2.id,
-        service: bookingV2.service,
-        clientName: bookingV2.clientName,
-        eventDate: bookingEvent.eventDate,
-      })
-      .from(bookingV2)
-      .innerJoin(bookingEvent, eq(bookingEvent.bookingId, bookingV2.id))
-
-    return bookings.map((b) => ({
-      bookingId: b.id,
-      date: b.eventDate,
-      service: b.service,
-      clientName: b.clientName,
-    }))
-  } catch (err) {
-    return []
-  }
-}
+// getAllBookingsForCalendar (admin) is in app/actions/admin.ts — do not duplicate here.
 
 // ── getMyBookings ──────────────────────────────────────────────────────────
 // Returns the logged-in client's bookings joined with event, financials, and

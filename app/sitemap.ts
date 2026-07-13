@@ -7,14 +7,14 @@ const BASE_URL = 'https://studioaynsh.com'
 // Avoid `new Date()` — it makes every deployment invalidate every URL's
 // lastModified timestamp, which wastes Googlebot crawl budget.
 const DATES = {
-  home:      '2025-07-01',
-  portfolio: '2025-07-01',
-  services:  '2025-06-01',
-  about:     '2025-06-01',
-  blog:      '2025-07-01',
-  booking:   '2025-06-01',
-  contact:   '2025-06-01',
+  home:      '2026-07-13',
+  portfolio: '2026-07-13',
+  services:  '2026-06-01',
+  about:     '2026-06-01',
+  blog:      '2026-07-13',
+  contact:   '2026-06-01',
 }
+// /booking is robots: noindex — intentionally excluded from sitemap
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -52,13 +52,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.8,
       alternates: { languages: { 'en-IN': `${BASE_URL}/blog` } },
-    },
-    {
-      url: `${BASE_URL}/booking`,
-      lastModified: DATES.booking,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-      alternates: { languages: { 'en-IN': `${BASE_URL}/booking` } },
     },
     {
       url: `${BASE_URL}/contact`,
